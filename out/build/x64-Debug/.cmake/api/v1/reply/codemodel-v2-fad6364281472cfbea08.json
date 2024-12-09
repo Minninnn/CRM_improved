@@ -1,0 +1,323 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						4,
+						5
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "src",
+					"childIndexes" : 
+					[
+						2,
+						3
+					],
+					"jsonFile" : "directory-src-Debug-c94b7c2814d5a21df52c.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "src/web",
+					"jsonFile" : "directory-src.web-Debug-8fc56df4e6efe3885c69.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/web"
+				},
+				{
+					"build" : "src/scr",
+					"jsonFile" : "directory-src.scr-Debug-5d9bbaaeabeed4775a1b.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/scr"
+				},
+				{
+					"build" : "doc",
+					"jsonFile" : "directory-doc-Debug-6029fece2c59a9c3a315.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "doc"
+				},
+				{
+					"build" : "libs",
+					"childIndexes" : 
+					[
+						6,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-libs-Debug-dd7a5ca29a7a50124f40.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "libs"
+				},
+				{
+					"build" : "libs/libpqxx",
+					"childIndexes" : 
+					[
+						7,
+						8,
+						9
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-libs.libpqxx-Debug-d5e543d2b70b49e6a25a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 1,
+					"source" : "libs/libpqxx"
+				},
+				{
+					"build" : "libs/libpqxx/src",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-libs.libpqxx.src-Debug-2af8c47b55873f12b998.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 1,
+					"source" : "libs/libpqxx/src",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "libs/libpqxx/include",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-libs.libpqxx.include-Debug-33e00087d83f45351d23.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 1,
+					"source" : "libs/libpqxx/include"
+				},
+				{
+					"build" : "libs/libpqxx/test",
+					"jsonFile" : "directory-libs.libpqxx.test-Debug-6da0cffdd4c3614b91a7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.8"
+					},
+					"parentIndex" : 6,
+					"projectIndex" : 1,
+					"source" : "libs/libpqxx/test",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "libs/asio",
+					"jsonFile" : "directory-libs.asio-Debug-5634deab531b57bfe985.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/asio"
+				},
+				{
+					"build" : "libs/nlohmann-json",
+					"jsonFile" : "directory-libs.nlohmann-json-Debug-8dd22d2ea3ded18a0450.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/nlohmann-json"
+				},
+				{
+					"build" : "libs/openssl",
+					"jsonFile" : "directory-libs.openssl-Debug-245755f375ae1ee8f6e0.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/openssl"
+				},
+				{
+					"build" : "libs/restbed",
+					"jsonFile" : "directory-libs.restbed-Debug-706dd95d16496062fccb.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/restbed"
+				},
+				{
+					"build" : "libs/vcpkg-cmake",
+					"jsonFile" : "directory-libs.vcpkg-cmake-Debug-9613a63145425287b4dd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/vcpkg-cmake"
+				},
+				{
+					"build" : "libs/vcpkg-cmake-config",
+					"jsonFile" : "directory-libs.vcpkg-cmake-config-Debug-add6179867c76b7197fc.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/vcpkg-cmake-config"
+				},
+				{
+					"build" : "libs/vcpkg-cmake-get-vars",
+					"jsonFile" : "directory-libs.vcpkg-cmake-get-vars-Debug-39c35dc814961325da87.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 5,
+					"projectIndex" : 0,
+					"source" : "libs/vcpkg-cmake-get-vars"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						10,
+						11,
+						12,
+						13,
+						14,
+						15,
+						16
+					],
+					"name" : "DBProject",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						6,
+						7,
+						8,
+						9
+					],
+					"name" : "libpqxx",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 7,
+					"id" : "pqxx::@336e8f1828ca60d76c11",
+					"jsonFile" : "target-pqxx-Debug-b2458d23ff5a0fdc18c9.json",
+					"name" : "pqxx",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "run::@145eef247bfb46b6828c",
+					"jsonFile" : "target-run-Debug-761b4f7ee56c470a37d8.json",
+					"name" : "run",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 9,
+					"id" : "runner::@c974859c888634c04ce2",
+					"jsonFile" : "target-runner-Debug-4cf175d1ba5128cefdc4.json",
+					"name" : "runner",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "D:/CRM/out/build/x64-Debug",
+		"source" : "D:/CRM"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

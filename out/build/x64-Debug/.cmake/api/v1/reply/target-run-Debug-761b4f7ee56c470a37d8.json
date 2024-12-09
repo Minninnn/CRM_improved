@@ -1,0 +1,273 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "src/run.exe"
+		},
+		{
+			"path" : "src/run.pdb"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"_add_executable",
+			"add_executable",
+			"target_link_libraries",
+			"library_target_setup",
+			"add_compile_options"
+		],
+		"files" : 
+		[
+			"C:/Users/BigMiniLox/vcpkg/scripts/buildsystems/vcpkg.cmake",
+			"src/CMakeLists.txt",
+			"libs/openssl/CMakeLists.txt",
+			"libs/restbed/CMakeLists.txt",
+			"libs/CMakeLists.txt",
+			"libs/libpqxx/src/CMakeLists.txt",
+			"CMakeLists.txt",
+			"libs/nlohmann-json/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 598,
+				"parent" : 1
+			},
+			{
+				"file" : 2
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 7,
+				"parent" : 3
+			},
+			{
+				"file" : 3
+			},
+			{
+				"command" : 2,
+				"file" : 3,
+				"line" : 5,
+				"parent" : 5
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 2,
+				"file" : 4,
+				"line" : 19,
+				"parent" : 7
+			},
+			{
+				"file" : 5
+			},
+			{
+				"command" : 3,
+				"file" : 5,
+				"line" : 81,
+				"parent" : 9
+			},
+			{
+				"command" : 2,
+				"file" : 5,
+				"line" : 29,
+				"parent" : 10
+			},
+			{
+				"command" : 2,
+				"file" : 5,
+				"line" : 31,
+				"parent" : 10
+			},
+			{
+				"file" : 6
+			},
+			{
+				"command" : 4,
+				"file" : 6,
+				"line" : 4,
+				"parent" : 13
+			},
+			{
+				"file" : 7
+			},
+			{
+				"command" : 2,
+				"file" : 7,
+				"line" : 7,
+				"parent" : 15
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -std:c++17 -MDd"
+				},
+				{
+					"backtrace" : 14,
+					"fragment" : "-Wall"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 8,
+					"path" : "D:/CRM/out/build/x64-Debug/libs/libpqxx/include"
+				},
+				{
+					"backtrace" : 8,
+					"path" : "D:/CRM/libs/libpqxx/include"
+				},
+				{
+					"backtrace" : 16,
+					"isSystem" : true,
+					"path" : "D:/CRM/libs/nlohmann-json/include"
+				},
+				{
+					"backtrace" : 4,
+					"isSystem" : true,
+					"path" : "D:/CRM/libs/openssl/include"
+				},
+				{
+					"backtrace" : 6,
+					"isSystem" : true,
+					"path" : "D:/CRM/libs/restbed/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					16
+				],
+				"standard" : "17"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 8,
+			"id" : "pqxx::@336e8f1828ca60d76c11"
+		}
+	],
+	"id" : "run::@145eef247bfb46b6828c",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "/DWIN32 /D_WINDOWS /EHsc /Zi /Ob0 /Od /RTC1 -MDd",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "/machine:x64 /debug /INCREMENTAL /subsystem:console",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "C:\\Users\\BigMiniLox\\vcpkg\\installed\\x64-windows\\debug\\lib\\libssl.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "C:\\Users\\BigMiniLox\\vcpkg\\installed\\x64-windows\\debug\\lib\\libcrypto.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 6,
+				"fragment" : "D:\\CRM\\libs\\restbed\\debug\\lib\\restbed-shared.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "libs\\libpqxx\\src\\pqxx.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "C:\\Users\\BigMiniLox\\vcpkg\\installed\\x64-windows\\debug\\lib\\libpq.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "wsock32.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "ws2_32.lib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "run",
+	"nameOnDisk" : "run.exe",
+	"paths" : 
+	{
+		"build" : "src",
+		"source" : "src"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"name" : "",
+			"sourceIndexes" : 
+			[
+				1
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 2,
+			"compileGroupIndex" : 0,
+			"path" : "src/main.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 16,
+			"path" : "libs/nlohmann-json/share/nlohmann_json/nlohmann_json.natvis",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "EXECUTABLE"
+}

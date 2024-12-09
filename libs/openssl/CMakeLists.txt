@@ -1,0 +1,7 @@
+set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}")
+set(OPENSSL_INCLUDE_DIR "${CMAKE_CURRENT_LIST_DIR}/include")
+set(OPENSSL_LIBRARIES "${CMAKE_CURRENT_LIST_DIR}/lib")
+
+find_package(OpenSSL REQUIRED)
+
+target_link_libraries(run PRIVATE OpenSSL::SSL OpenSSL::Crypto)

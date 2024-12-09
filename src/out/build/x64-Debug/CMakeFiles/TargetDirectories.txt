@@ -1,0 +1,7 @@
+D:/CRM/src/out/build/x64-Debug/CMakeFiles/run.dir
+D:/CRM/src/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+D:/CRM/src/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
+D:/CRM/src/out/build/x64-Debug/web/CMakeFiles/edit_cache.dir
+D:/CRM/src/out/build/x64-Debug/web/CMakeFiles/rebuild_cache.dir
+D:/CRM/src/out/build/x64-Debug/scr/CMakeFiles/edit_cache.dir
+D:/CRM/src/out/build/x64-Debug/scr/CMakeFiles/rebuild_cache.dir
