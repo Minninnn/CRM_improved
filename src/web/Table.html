@@ -192,9 +192,8 @@
     </div>
 
     <!-- Модальное окно для создания/редактирования сделки -->
-    <!-- Модальное окно для создания/редактирования сделки -->
     <div class="modal fade" id="dealModal" tabindex="-1" aria-labelledby="dealModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-custom modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content rounded-4 shadow-lg">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="dealModalLabel">Создать сделку</h5>
@@ -202,25 +201,48 @@
                 </div>
                 <div class="modal-body">
                     <form id="dealForm" novalidate>
-                        <!-- Списки инструментов, продуктов и услуг -->
+                        <!-- Свертываемый раздел "Инструменты" -->
                         <div class="mb-4">
-                            <h6>Инструменты</h6>
-                            <div id="toolsList" class="row g-3">
-                                <!-- Динамически заполняемые инструменты -->
+                            <button class="btn btn-secondary w-100 text-start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#toolsCollapse" aria-expanded="false" aria-controls="toolsCollapse">
+                                <div>
+                                    <i class="bi bi-tools me-2"></i> Инструменты
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="collapse mt-2" id="toolsCollapse">
+                                <div id="toolsList" class="row g-3">
+                                    <!-- Динамически заполняемые инструменты -->
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Свертываемый раздел "Услуги подрядчиков" -->
                         <div class="mb-4">
-                            <h6>Продукты</h6>
-                            <div id="productsList" class="row g-3">
-                                <!-- Динамически заполняемые продукты -->
+                            <button class="btn btn-secondary w-100 text-start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#servicesCollapse" aria-expanded="false" aria-controls="servicesCollapse">
+                                <div>
+                                    <i class="bi bi-briefcase me-2"></i> Услуги подрядчиков
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="collapse mt-2" id="servicesCollapse">
+                                <div id="servicesList" class="form-check">
+                                    <!-- Динамически заполняемые услуги -->
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Свертываемый раздел "Продукты" -->
                         <div class="mb-4">
-                            <h6>Услуги подрядчиков</h6>
-                            <div id="servicesList" class="form-check">
-                                <!-- Динамически заполняемые услуги -->
+                            <button class="btn btn-secondary w-100 text-start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#productsCollapse" aria-expanded="false" aria-controls="productsCollapse">
+                                <div>
+                                    <i class="bi bi-box-seam me-2"></i> Продукты
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="collapse mt-2" id="productsCollapse">
+                                <div id="productsList" class="row g-3">
+                                    <!-- Динамически заполняемые продукты -->
+                                </div>
                             </div>
                         </div>
 
@@ -825,6 +847,34 @@
                 generateScheduleGrid();
             }
 
+            function toggleDurationInput(toolItem, show) {
+                const durationInput = toolItem.querySelector('.duration-input');
+                if (durationInput) {
+                    if (show) {
+                        durationInput.classList.add('visible');
+                    } else {
+                        durationInput.classList.remove('visible');
+                        durationInput.value = '1'; // Сброс значения по умолчанию
+                    }
+                }
+            }
+
+            // Обработчик изменения количества инструмента
+            function setupToolsListHandlers() {
+                toolsList.addEventListener('input', (event) => {
+                    const target = event.target;
+                    if (target.classList.contains('amount-input')) {
+                        const toolItem = target.closest('.tool-item');
+                        const amount = parseInt(target.value, 10);
+                        if (amount > 0) {
+                            toggleDurationInput(toolItem, true);
+                        } else {
+                            toggleDurationInput(toolItem, false);
+                        }
+                    }
+                });
+            }
+
             // Обработчики кнопок навигации по неделям и дням
             document.getElementById('prevWeek').addEventListener('click', debounce(function () {
                 weekOffset -= 1;
@@ -863,6 +913,7 @@
             saveDealButton.addEventListener('click', saveDeal);
 
             // Инициализация приложения:
+            setupToolsListHandlers();
             loadInitialData();
             generateTimeSlots();
             setupCellClickHandler();

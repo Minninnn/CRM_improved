@@ -411,8 +411,13 @@ body {
 }
 
 /* ===================================================
-   Обновленные стили для модального окна
+   Обновлённые стили для модального окна
    =================================================== */
+
+/* Пользовательский класс для уменьшенной ширины модального окна */
+.modal-custom {
+    max-width: 500px; /* Установите необходимую ширину */
+}
 
 /* Заголовок модального окна */
 .modal-header {
@@ -487,7 +492,7 @@ body {
     }
 }
 
-/* Обновленные стили для списка инструментов */
+/* Обновлённые стили для списка инструментов и продуктов */
 #toolsList .tool-item,
 #productsList .product-item {
     padding: 0.5rem;
@@ -501,12 +506,12 @@ body {
         background-color: #f1f1f1;
     }
 
-/* Обновленные стили для услуг */
+/* Обновлённые стили для услуг */
 #servicesList .form-check-input {
     margin-top: 0.3rem;
 }
 
-/* Обновленные стили для невалидных списков */
+/* Обновлённые стили для невалидных списков */
 #toolsList.is-invalid,
 #servicesList.is-invalid,
 #productsList.is-invalid {
@@ -515,3 +520,37 @@ body {
     border-radius: 0.5rem;
     background-color: #ffe6e6;
 }
+
+/* Стили для сворачиваемых кнопок */
+.btn-secondary[data-bs-toggle="collapse"] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.btn-secondary .bi-chevron-down {
+    transition: transform 0.3s;
+}
+
+.btn-secondary[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* Стили для полей ввода продолжительности */
+.duration-input {
+    display: none; /* Скрыто по умолчанию */
+}
+
+/* Отображение полей ввода продолжительности при необходимости */
+.tool-item .duration-input.visible {
+    display: block;
+}
+
+/* Стили для улучшенного отображения инструментов */
+#toolsList .tool-item {
+    position: relative;
+}
+
+    #toolsList .tool-item .form-control {
+        margin-bottom: 0.5rem;
+    }
