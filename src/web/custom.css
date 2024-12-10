@@ -409,3 +409,109 @@ body {
     height: auto;
     max-height: 90vh;
 }
+
+/* ===================================================
+   Обновленные стили для модального окна
+   =================================================== */
+
+/* Заголовок модального окна */
+.modal-header {
+    border-bottom: none;
+}
+
+/* Тело модального окна */
+.modal-body {
+    background-color: #f9f9f9;
+}
+
+/* Футер модального окна */
+.modal-footer {
+    border-top: none;
+}
+
+/* Поля формы с плавающими метками */
+.form-floating > .form-control {
+    height: calc(3.5rem + 2px);
+}
+
+/* Стили для кнопки сохранения */
+#saveDealButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Дополнительные стили для улучшения внешнего вида инструментов, продуктов и услуг */
+#toolsList .tool-item,
+#productsList .product-item {
+    display: flex;
+    flex-direction: column;
+}
+
+#servicesList .service-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+    #servicesList .service-item label {
+        margin-left: 0.5rem;
+        cursor: pointer;
+    }
+
+/* Стили для инпутов с ошибками */
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+    .is-invalid:focus {
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+/* Анимация кнопок */
+.button-clicked {
+    animation: button-press-animation 0.2s;
+}
+
+@keyframes button-press-animation {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(0.95);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Обновленные стили для списка инструментов */
+#toolsList .tool-item,
+#productsList .product-item {
+    padding: 0.5rem;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
+}
+
+    #toolsList .tool-item:hover,
+    #productsList .product-item:hover {
+        background-color: #f1f1f1;
+    }
+
+/* Обновленные стили для услуг */
+#servicesList .form-check-input {
+    margin-top: 0.3rem;
+}
+
+/* Обновленные стили для невалидных списков */
+#toolsList.is-invalid,
+#servicesList.is-invalid,
+#productsList.is-invalid {
+    border: 1px solid #dc3545;
+    padding: 10px;
+    border-radius: 0.5rem;
+    background-color: #ffe6e6;
+}

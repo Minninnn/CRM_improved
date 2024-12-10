@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ru">
 <head>
-    <!-- 
+    <!--
         Код улучшен для большей структурированности, читаемости и удобства поддержки.
         Добавлены комментарии на русском языке, изменена организация кода, упрощена логика,
         улучшена обработка ошибок, повышена семантика.
@@ -192,56 +192,77 @@
     </div>
 
     <!-- Модальное окно для создания/редактирования сделки -->
+    <!-- Модальное окно для создания/редактирования сделки -->
     <div class="modal fade" id="dealModal" tabindex="-1" aria-labelledby="dealModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-
-                <div class="modal-header">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-lg">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="dealModalLabel">Создать сделку</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
-
                 <div class="modal-body">
-                    <form id="dealForm">
+                    <form id="dealForm" novalidate>
                         <!-- Списки инструментов, продуктов и услуг -->
-                        <div class="mb-3">
-                            <label class="form-label">Инструменты</label>
-                            <div id="toolsList"></div>
+                        <div class="mb-4">
+                            <h6>Инструменты</h6>
+                            <div id="toolsList" class="row g-3">
+                                <!-- Динамически заполняемые инструменты -->
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Продукты</label>
-                            <div id="productsList"></div>
+                        <div class="mb-4">
+                            <h6>Продукты</h6>
+                            <div id="productsList" class="row g-3">
+                                <!-- Динамически заполняемые продукты -->
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Услуги подрядчиков</label>
-                            <div id="servicesList"></div>
+                        <div class="mb-4">
+                            <h6>Услуги подрядчиков</h6>
+                            <div id="servicesList" class="form-check">
+                                <!-- Динамически заполняемые услуги -->
+                            </div>
                         </div>
 
                         <!-- Данные клиента -->
                         <div class="mb-3">
-                            <label for="clientName" class="form-label">Имя клиента</label>
-                            <input type="text" class="form-control" id="clientName" required>
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="clientName" placeholder="Имя клиента" required>
+                                <label for="clientName">Имя клиента <span class="text-danger">*</span></label>
+                                <div class="invalid-feedback">
+                                    Пожалуйста, введите имя клиента.
+                                </div>
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="clientPhone" class="form-label">Номер телефона</label>
-                            <input type="tel" class="form-control" id="clientPhone">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="clientPhone" placeholder="Номер телефона">
+                                <label for="clientPhone">Номер телефона</label>
+                                <div class="invalid-feedback">
+                                    Введите корректный номер телефона или оставьте поле пустым.
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="clientEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="clientEmail">
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="clientEmail" placeholder="Email">
+                                <label for="clientEmail">Email</label>
+                                <div class="invalid-feedback">
+                                    Введите корректный Email или оставьте поле пустым.
+                                </div>
+                            </div>
                         </div>
 
                         <input type="hidden" id="selectedDateTime">
                     </form>
                 </div>
-
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" id="saveDealButton">Сохранить</button>
+                    <button type="button" class="btn btn-primary" id="saveDealButton">
+                        <i class="bi bi-save me-2"></i> Сохранить
+                    </button>
                 </div>
             </div>
         </div>
@@ -557,7 +578,7 @@
                         deals.forEach(deal => {
                             const dealDiv = document.createElement('div');
                             dealDiv.classList.add('deal-item', 'badge', 'bg-info', 'text-dark', 'mb-1', 'd-block');
-                            dealDiv.textContent = `Сделка: ${deal.id} - ${deal.clientName}`;
+                            dealDiv.textContent = `${deal.clientName}`;
                             dealsContainer.appendChild(dealDiv);
                         });
 
