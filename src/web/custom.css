@@ -15,14 +15,6 @@ body {
         box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
     }
 
-/* Стили для контейнеров списка инструментов и услуг подрядчиков */
-#toolsList.is-invalid,
-#servicesList.is-invalid {
-    border: 1px solid #dc3545;
-    padding: 10px;
-    border-radius: 4px;
-}
-
 /* ===================================================
    Навигационные панели
    =================================================== */
@@ -53,7 +45,7 @@ body {
     top: 0;
     bottom: 0;
     left: 0;
-    padding: 48px 0 0; /* Удалён дублирующий padding */
+    padding: 48px 0 0;
     z-index: 1000;
     font-size: 2rem;
 }
@@ -90,12 +82,12 @@ body {
 #time-container-right {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Центрируем по горизонтали */
+    align-items: center;
 }
 
 /* Ячейки времени */
 .time-cell {
-    height: 40px; /* Высота ячейки времени */
+    height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -204,6 +196,8 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
 }
 
 .schedule-row {
@@ -214,8 +208,8 @@ body {
 .schedule-cell {
     flex: 1;
     border: 1px solid #ccc;
-    height: 40px; /* Высота ячейки соответствует ячейке времени */
-    position: relative; /* Для позиционирования .deal-options */
+    height: 30px;
+    position: relative;
     cursor: pointer;
     transition: background-color 0.3s;
 }
@@ -225,7 +219,7 @@ body {
     }
 
     .schedule-cell.deal-created {
-        background-color: #550adaeb; /* Замените на нужный вам цвет */
+        background-color: #550adaeb;
     }
 
 /* Создание сделок */
@@ -288,7 +282,8 @@ body {
         cursor: pointer;
     }
 
-/* Анимация кнопок */
+/* Анимация кнопок при нажатии */
+button:active,
 .button-clicked {
     animation: button-press-animation 0.2s;
 }
@@ -299,7 +294,7 @@ body {
     }
 
     50% {
-        transform: scale(0.9);
+        transform: scale(0.95);
     }
 
     100% {
@@ -411,12 +406,12 @@ body {
 }
 
 /* ===================================================
-   Обновлённые стили для модального окна
+   Модальное окно и расписание
    =================================================== */
 
 /* Пользовательский класс для уменьшенной ширины модального окна */
-.modal-custom {
-    max-width: 500px; /* Установите необходимую ширину */
+.modal.fade {
+    max-width: 400px;
 }
 
 /* Заголовок модального окна */
@@ -451,7 +446,16 @@ body {
 #productsList .product-item {
     display: flex;
     flex-direction: column;
+    padding: 0.5rem;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 0.5rem;
 }
+
+    #toolsList .tool-item:hover,
+    #productsList .product-item:hover {
+        background-color: #f1f1f1;
+    }
 
 #servicesList .service-item {
     display: flex;
@@ -464,54 +468,7 @@ body {
         cursor: pointer;
     }
 
-/* Стили для инпутов с ошибками */
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-    .is-invalid:focus {
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-    }
-
-/* Анимация кнопок */
-.button-clicked {
-    animation: button-press-animation 0.2s;
-}
-
-@keyframes button-press-animation {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(0.95);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* Обновлённые стили для списка инструментов и продуктов */
-#toolsList .tool-item,
-#productsList .product-item {
-    padding: 0.5rem;
-    background-color: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 0.5rem;
-}
-
-    #toolsList .tool-item:hover,
-    #productsList .product-item:hover {
-        background-color: #f1f1f1;
-    }
-
-/* Обновлённые стили для услуг */
-#servicesList .form-check-input {
-    margin-top: 0.3rem;
-}
-
-/* Обновлённые стили для невалидных списков */
+/* Стили для инпутов с ошибками в списках */
 #toolsList.is-invalid,
 #servicesList.is-invalid,
 #productsList.is-invalid {
@@ -538,19 +495,57 @@ body {
 
 /* Стили для полей ввода продолжительности */
 .duration-input {
-    display: none; /* Скрыто по умолчанию */
+    display: none;
 }
 
-/* Отображение полей ввода продолжительности при необходимости */
 .tool-item .duration-input.visible {
     display: block;
 }
 
 /* Стили для улучшенного отображения инструментов */
-#toolsList .tool-item {
-    position: relative;
+#toolsList .tool-item .form-control {
+    margin-bottom: 0.5rem;
 }
 
-    #toolsList .tool-item .form-control {
-        margin-bottom: 0.5rem;
+/* ===================================================
+   Плавные переходы расписания
+   =================================================== */
+
+/* Контейнер расписания с переходом прозрачности */
+#table-container {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
+
+/* Классы для анимации появления и исчезновения */
+.fade-out {
+    opacity: 0;
+}
+
+.fade-in {
+    opacity: 1;
+}
+
+/* ===================================================
+   Анимация кнопок
+   =================================================== */
+
+/* Анимация кнопок при нажатии */
+button:active,
+.button-clicked {
+    animation: button-press-animation 0.2s;
+}
+
+@keyframes button-press-animation {
+    0% {
+        transform: scale(1);
     }
+
+    50% {
+        transform: scale(0.95);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

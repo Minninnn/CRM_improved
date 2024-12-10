@@ -193,7 +193,7 @@
 
     <!-- Модальное окно для создания/редактирования сделки -->
     <div class="modal fade" id="dealModal" tabindex="-1" aria-labelledby="dealModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-custom modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content rounded-4 shadow-lg">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="dealModalLabel">Создать сделку</h5>
@@ -358,9 +358,10 @@
 
                 tools.forEach(tool => {
                     const div = document.createElement('div');
-                    div.classList.add('tool-item', 'mb-2');
+                    div.classList.add('tool-item', 'mb-3');
 
                     const label = document.createElement('label');
+                    label.classList.add('form-label', 'fw-bold');
                     label.textContent = `${tool.name} (доступно: ${tool.amount})`;
 
                     const amountInput = document.createElement('input');
@@ -373,17 +374,30 @@
                     amountInput.classList.add('form-control', 'amount-input', 'mt-1');
                     amountInput.placeholder = 'Количество';
 
+                    // Контейнер для продолжительности и ее отображения
+                    const durationContainer = document.createElement('div');
+                    durationContainer.classList.add('d-flex', 'align-items-center', 'mt-2');
+
                     const durationInput = document.createElement('input');
                     durationInput.type = 'number';
-                    durationInput.min = '1';
-                    durationInput.value = '1';
+                    durationInput.min = '30';
+                    durationInput.step = '30';
+                    durationInput.value = '30';
                     durationInput.dataset.toolId = tool.id;
-                    durationInput.classList.add('form-control', 'duration-input', 'mt-1');
-                    durationInput.placeholder = 'Продолжительность (часы)';
+                    durationInput.classList.add('form-control', 'duration-input');
+                    durationInput.placeholder = 'Продолжительность (минуты)';
+                    durationInput.title = 'Минимальная продолжительность: 30 минут';
+
+                    const durationDisplay = document.createElement('span');
+                    durationDisplay.classList.add('ms-2', 'duration-display');
+                    durationDisplay.textContent = '0.5 ч'; // Изначально 30 минут = 0.5 часа
+
+                    durationContainer.appendChild(durationInput);
+                    durationContainer.appendChild(durationDisplay);
 
                     div.appendChild(label);
                     div.appendChild(amountInput);
-                    div.appendChild(durationInput);
+                    div.appendChild(durationContainer);
                     fragment.appendChild(div);
                 });
 
@@ -448,7 +462,7 @@
             function generateTimeSlots() {
                 const startTime = 10 * 60;
                 const endTime = 20 * 60;
-                const step = 30;
+                const step = 15;
                 const timeContainerLeft = document.getElementById('time-container-left');
                 const timeContainerRight = document.getElementById('time-container-right');
 
@@ -561,6 +575,9 @@
                 try {
                     const data = await fetchData(`/api/deals?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDateString)}`);
 
+                    // Отладочное сообщение для проверки полученных данных
+                    console.log('Полученные сделки:', data);
+
                     dealsMap.clear();
 
                     // Группируем сделки по дате/времени
@@ -598,9 +615,20 @@
                         const dealsContainer = cell.querySelector('.deals-container');
 
                         deals.forEach(deal => {
+                            // Отладочное сообщение для проверки значения duration
+                            console.log(`Обработка сделки для клиента: ${deal.clientName}, Duration: ${deal.duration}`);
+
                             const dealDiv = document.createElement('div');
-                            dealDiv.classList.add('deal-item', 'badge', 'bg-info', 'text-dark', 'mb-1', 'd-block');
-                            dealDiv.textContent = `${deal.clientName}`;
+                            dealDiv.classList.add('deal-item', 'badge', 'bg-info', 'text-dark', 'mb-1', 'd-block', 'w-100');
+
+                            // Проверяем, есть ли продолжительность и превышает ли она 30 минут
+                            if (deal.duration && Number(deal.duration) > 29) {
+                                const durationHours = formatDuration(Number(deal.duration));
+                                dealDiv.textContent = `${deal.clientName} - ${durationHours} ч`;
+                            } else {
+                                dealDiv.textContent = `${deal.clientName}`;
+                            }
+
                             dealsContainer.appendChild(dealDiv);
                         });
 
@@ -638,7 +666,6 @@
             }
 
             // Открытие модального окна для редактирования сделки
-            // В примере редактируется первая сделка по указанному времени
             function openEditDealModal(datetimeISO) {
                 const existingDeals = dealsMap.get(datetimeISO) || [];
                 if (existingDeals.length === 0) {
@@ -761,8 +788,11 @@
                     clientName: clientName,
                     clientPhone: clientPhone,
                     clientEmail: clientEmail,
-                    dateTime: dateTime
+                    dateTime: dateTime,
+                    duration: tools.reduce((total, tool) => total + tool.duration * tool.amount, 0) // Пример суммирования продолжительности
                 };
+
+                console.log('Отправка данных сделки:', dealData);
 
                 try {
                     const response = await fetch('/createDeal', {
@@ -789,14 +819,6 @@
                 } catch (error) {
                     alert('Ошибка при сохранении сделки: ' + error.message);
                 }
-            }
-
-            // Вспомогательная функция анимации кнопки
-            function animateButton(button) {
-                button.classList.add('button-clicked');
-                setTimeout(() => {
-                    button.classList.remove('button-clicked');
-                }, 200);
             }
 
             // Debounce для предотвращения частых вызовов (если понадобится)
@@ -875,39 +897,39 @@
                 });
             }
 
+            function formatDuration(minutes) {
+                const hours = minutes / 60;
+                return hours.toFixed(1); // Округление до одного десятичного знака
+            }
+
             // Обработчики кнопок навигации по неделям и дням
             document.getElementById('prevWeek').addEventListener('click', debounce(function () {
                 weekOffset -= 1;
                 dayOffset = 0;
                 updateWeekDates();
-                animateButton(this);
-            }, 300));
+            }, 100));
 
             document.getElementById('nextWeek').addEventListener('click', debounce(function () {
                 weekOffset += 1;
                 dayOffset = 0;
                 updateWeekDates();
-                animateButton(this);
-            }, 300));
+            }, 100));
 
             document.getElementById('currentWeek').addEventListener('click', debounce(function () {
                 weekOffset = 0;
                 dayOffset = 0;
                 updateWeekDates();
-                animateButton(this);
-            }, 300));
+            }, 100));
 
             document.getElementById('prevDay').addEventListener('click', debounce(function () {
                 dayOffset -= 1;
                 updateWeekDates();
-                animateButton(this);
-            }, 300));
+            }, 100));
 
             document.getElementById('nextDay').addEventListener('click', debounce(function () {
                 dayOffset += 1;
                 updateWeekDates();
-                animateButton(this);
-            }, 300));
+            }, 100));
 
             // Сохранение сделки по нажатию кнопки в модальном окне
             saveDealButton.addEventListener('click', saveDeal);

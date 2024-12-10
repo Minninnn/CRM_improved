@@ -319,7 +319,7 @@ void get_services_handler(const shared_ptr<Session> session) {
     get_list_handler<json>(session, "services", "SELECT id, name, contractor, price FROM contractors_services", "services");
 }
 
-// Обработчик сделок с добавлением clientName
+// Обработчик сделок с добавлением clientName и duration с проверкой на NULL
 void get_deals_handler(const shared_ptr<Session> session) {
     string session_id = extract_session_id(session);
     if (!session_id.empty()) {
@@ -340,8 +340,8 @@ void get_deals_handler(const shared_ptr<Session> session) {
                 json deals = cache.get(deals_cache_key, [&]() {
                     auto conn = connection_pool.acquire();
                     pqxx::work txn(*conn);
-                    // Измененный SQL-запрос для получения clientName
-                    string query = "SELECT d.scheduled_date, c.name AS clientName FROM deals d "
+                    // Обновленный SQL-запрос с полем duration
+                    string query = "SELECT d.scheduled_date, c.name AS clientName, d.duration FROM deals d "
                         "JOIN clients_info c ON d.client_id = c.id "
                         "WHERE d.scheduled_date BETWEEN $1 AND $2";
                     pqxx::result r = txn.exec_params(query, start_date, end_date);
@@ -352,7 +352,14 @@ void get_deals_handler(const shared_ptr<Session> session) {
                     for (const auto& row : r) {
                         json deal;
                         deal["scheduled_date"] = row["scheduled_date"].c_str();
-                        deal["clientName"] = row["clientName"].c_str(); // Добавлено имя клиента
+                        deal["clientName"] = row["clientName"].c_str();
+                        // Проверка на NULL значение для duration
+                        if (row["duration"].is_null()) {
+                            deal["duration"] = 0; // Установите значение по умолчанию
+                        }
+                        else {
+                            deal["duration"] = row["duration"].as<int>();
+                        }
                         deal_list.push_back(deal);
                     }
                     return deal_list;
@@ -549,6 +556,7 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                     vector<json> products = data.value("products", vector<json>());
                     vector<json> services = data.value("services", vector<json>());
                     string dateTime = data["dateTime"];
+                    int duration = data.value("duration", 0);
 
                     double total_cost = 0.0;
 
@@ -587,7 +595,7 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                         }
 
                         txn.exec_params("UPDATE tools SET amount = amount - $1 WHERE id = $2", amount, tool_id);
-                        total_cost += price * amount * duration;
+                        total_cost += price * amount * duration / 60;
                     }
 
                     // Обработка продуктов
@@ -633,7 +641,7 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                     int resource_id = resource_res[0]["id"].as<int>();
 
                     // Вставка сделки
-                    txn.exec_params("INSERT INTO deals (client_id, resource_id, create_date, scheduled_date) VALUES ($1, $2, NOW(), $3)", client_id, resource_id, dateTime);
+                    txn.exec_params( "INSERT INTO deals (client_id, resource_id, create_date, scheduled_date, duration) VALUES ($1, $2, NOW(), $3, $4)", client_id, resource_id, dateTime, duration );
                     txn.commit();
                     connection_pool.release(conn);
 
