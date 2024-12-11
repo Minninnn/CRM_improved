@@ -1,6 +1,19 @@
 /* ===================================================
    Основные стили
-   =================================================== */
+=================================================== */
+
+.deal-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: rgba(0, 123, 255, 0.5);
+    color: #fff;
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
 
 body {
     font-family: var(--bs-body-font-family);
@@ -17,7 +30,7 @@ body {
 
 /* ===================================================
    Навигационные панели
-   =================================================== */
+=================================================== */
 
 /* Верхняя навигационная панель */
 #navbar-top {
@@ -69,12 +82,14 @@ body {
 
 /* ===================================================
    Основной контент и расписание
-   =================================================== */
+=================================================== */
 
 /* Основной контейнер расписания */
 #schedule-container {
     display: flex;
     justify-content: space-between;
+    width: 100%; /* Добавлено для растягивания сетки */
+    height: 100vh; /* Например, можно задать высоту */
 }
 
 /* Контейнеры времени слева и справа */
@@ -83,6 +98,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 50px; /* Задайте фиксированную ширину или используйте flex */
 }
 
 /* Ячейки времени */
@@ -91,6 +107,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.time-cell, .schedule-cell {
+    height: 30px;
 }
 
 /* Генерация сделок в ячейке */
@@ -110,18 +130,17 @@ body {
 
 /* Отдельная сделка */
 .deal-item {
-    background-color: #007bff;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: rgba(0, 123, 255, 0.5);
     color: #fff;
-    padding: 2px 4px;
-    border-radius: 4px;
-    margin: 1px 0;
-    font-size: 0.6rem;
-    white-space: nowrap;
+    text-align: center;
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
-    width: 90%;
     cursor: pointer;
-    transition: background-color 0.3s;
 }
 
     .deal-item:hover {
@@ -182,36 +201,22 @@ body {
         margin: 0;
     }
 
-/* Кнопки внутри опций */
-.deal-options .edit-button {
-    display: none;
-}
-
-.schedule-cell.has-deal .deal-options .edit-button {
-    display: block;
-}
-
 /* Табличная часть расписания */
 #table-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    opacity: 1;
-    transition: opacity 0.5s ease-in-out;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 дней недели */
+    grid-auto-rows: 30px; /* высота строки */
+    width: 100%;
+    overflow: auto;
 }
 
 .schedule-row {
-    display: flex;
-    flex: 1;
+    display: contents; /* Позволяет использовать родительский grid */
 }
 
 .schedule-cell {
-    flex: 1;
     border: 1px solid #ccc;
-    height: 30px;
     position: relative;
-    cursor: pointer;
-    transition: background-color 0.3s;
 }
 
     .schedule-cell:hover {
@@ -236,7 +241,7 @@ body {
 
 /* ===================================================
    Кнопки и анимации
-   =================================================== */
+=================================================== */
 
 /* Кнопка открытия панели настроек таблицы */
 .buttonOpenCollapseSettingsTabl {
@@ -255,16 +260,17 @@ body {
     }
 
 /* Пробелы и стрелки */
-.spaceCollapseSettingsTabl {
+.spaceCollapseSettingsTabl,
+.arrowLeftCollapseSettingsTabl,
+.arrowRightCollapseSettingsTabl {
     border-top: 1px solid #ddd;
+    color: #000;
+    font-size: 0.7rem;
 }
 
 .arrowLeftCollapseSettingsTabl,
 .arrowRightCollapseSettingsTabl {
-    border-top: 1px solid #ddd;
     border-bottom: 1px solid #eee;
-    color: #000;
-    font-size: 0.7rem;
 }
 
 .arrow-and-time {
@@ -303,41 +309,8 @@ button:active,
 }
 
 /* ===================================================
-   Таблица и отображение сделок
-   =================================================== */
-
-/* Таблица в вертикальном режиме */
-#scheduleTable.table-vertical .cellrowTable {
-    width: 14.2857%;
-}
-
-/* Таблица в горизонтальном режиме */
-#scheduleTable.table-horizontal {
-    flex-direction: column;
-}
-
-    #scheduleTable.table-horizontal .cellrowTable {
-        width: auto;
-    }
-
-/* Ячейки таблицы */
-.cellrowTable {
-    width: 14.2857%;
-}
-
-.dateTable p {
-    margin: 0;
-    font-size: 0.7rem;
-    text-align: center;
-}
-
-.timeTable {
-    width: 2rem;
-}
-
-/* ===================================================
    Мобильные стили
-   =================================================== */
+=================================================== */
 
 @media (max-width: 767.98px) {
     #main {
@@ -345,8 +318,14 @@ button:active,
     }
 
     .deal-item {
-        font-size: 0.5rem;
-        padding: 1px 2px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        z-index: 5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .deal-options {
@@ -369,7 +348,7 @@ button:active,
 
 /* ===================================================
    Дополнительные стили
-   =================================================== */
+=================================================== */
 
 /* Настройки таблицы */
 #SettingsTabl {
@@ -386,12 +365,9 @@ button:active,
     text-align: center;
 }
 
-    .nav-dropup-menu .nav-link {
-        color: #000;
-        padding: 1.5rem 0;
-    }
-
+    .nav-dropup-menu .nav-link,
     .nav-dropup-menu.btn {
+        color: #000;
         padding: 1.5rem 0;
     }
 
@@ -407,11 +383,27 @@ button:active,
 
 /* ===================================================
    Модальное окно и расписание
-   =================================================== */
+=================================================== */
 
-/* Пользовательский класс для уменьшенной ширины модального окна */
-.modal.fade {
-    max-width: 400px;
+.modal-dialog {
+    margin: 1.75rem auto;
+}
+
+.modal-content {
+    /* Добавлена анимация появления */
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 /* Заголовок модального окна */
@@ -509,7 +501,7 @@ button:active,
 
 /* ===================================================
    Плавные переходы расписания
-   =================================================== */
+=================================================== */
 
 /* Контейнер расписания с переходом прозрачности */
 #table-container {
@@ -524,28 +516,4 @@ button:active,
 
 .fade-in {
     opacity: 1;
-}
-
-/* ===================================================
-   Анимация кнопок
-   =================================================== */
-
-/* Анимация кнопок при нажатии */
-button:active,
-.button-clicked {
-    animation: button-press-animation 0.2s;
-}
-
-@keyframes button-press-animation {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(0.95);
-    }
-
-    100% {
-        transform: scale(1);
-    }
 }

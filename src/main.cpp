@@ -53,6 +53,18 @@ public:
         return data;
     }
 
+    void invalidate_by_prefix(const std::string& prefix) {
+        std::unique_lock<std::shared_mutex> lock(cache_mutex);
+        for (auto it = cache.begin(); it != cache.end(); ) {
+            if (it->first.find(prefix) == 0) { // Проверяем, начинается ли ключ с префикса
+                it = cache.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
     void invalidate(const std::string& key) {
         std::unique_lock<std::shared_mutex> lock(cache_mutex);
         cache.erase(key);
@@ -218,6 +230,25 @@ void get_success_handler(const shared_ptr<Session> session) {
     session->close(response);
 }
 
+void script_handler(const shared_ptr<Session>& session) {
+    try {
+        // Укажите правильный путь к вашему script.js
+        const string response = load_file("D:/CRM/src/web/script.js");
+        session->close(restbed::OK, response, {
+            {"Content-Length", to_string(response.size())},
+            {"Content-Type", "application/javascript"}
+            });
+    }
+    catch (const exception& e) {
+        cerr << "Ошибка загрузки JS файла: " << e.what() << endl;
+        string error_message = "Ошибка загрузки JS файла";
+        session->close(restbed::INTERNAL_SERVER_ERROR, error_message, {
+            {"Content-Length", to_string(error_message.size())},
+            {"Content-Type", "text/plain; charset=utf-8"}
+            });
+    }
+}
+
 // Обработчик других страниц с проверкой сессии
 bool serve_protected_page(const shared_ptr<Session>& session, const string& filepath) {
     string session_id = extract_session_id(session);
@@ -319,7 +350,7 @@ void get_services_handler(const shared_ptr<Session> session) {
     get_list_handler<json>(session, "services", "SELECT id, name, contractor, price FROM contractors_services", "services");
 }
 
-// Обработчик сделок с добавлением clientName и duration с проверкой на NULL
+// Обработчик сделок с добавлением clientName, duration и id с проверкой на NULL
 void get_deals_handler(const shared_ptr<Session> session) {
     string session_id = extract_session_id(session);
     if (!session_id.empty()) {
@@ -336,12 +367,13 @@ void get_deals_handler(const shared_ptr<Session> session) {
             }
 
             try {
-                string deals_cache_key = "deals";
+                string deals_cache_key = "deals_" + start_date + "_" + end_date;
                 json deals = cache.get(deals_cache_key, [&]() {
                     auto conn = connection_pool.acquire();
                     pqxx::work txn(*conn);
-                    // Обновленный SQL-запрос с полем duration
-                    string query = "SELECT d.scheduled_date, c.name AS clientName, d.duration FROM deals d "
+                    // Выбираем duration и duration_service
+                    string query = "SELECT d.id, d.scheduled_date, c.name AS clientName, d.duration, d.duration_service "
+                        "FROM deals d "
                         "JOIN clients_info c ON d.client_id = c.id "
                         "WHERE d.scheduled_date BETWEEN $1 AND $2";
                     pqxx::result r = txn.exec_params(query, start_date, end_date);
@@ -351,15 +383,28 @@ void get_deals_handler(const shared_ptr<Session> session) {
                     json deal_list = json::array();
                     for (const auto& row : r) {
                         json deal;
+                        deal["id"] = row["id"].as<int>();
                         deal["scheduled_date"] = row["scheduled_date"].c_str();
                         deal["clientName"] = row["clientName"].c_str();
-                        // Проверка на NULL значение для duration
+
                         if (row["duration"].is_null()) {
-                            deal["duration"] = 0; // Установите значение по умолчанию
+                            deal["duration"] = 0;
                         }
                         else {
-                            deal["duration"] = row["duration"].as<int>();
+                            // Конвертация минут в часы
+                            int duration_minutes = row["duration"].as<int>();
+                            deal["duration"] = duration_minutes / 60.0;
                         }
+
+                        if (row["duration_service"].is_null()) {
+                            deal["duration_service"] = 0;
+                        }
+                        else {
+                            // Конвертация минут в часы
+                            int duration_service_minutes = row["duration_service"].as<int>();
+                            deal["duration_service"] = duration_service_minutes / 60.0;
+                        }
+
                         deal_list.push_back(deal);
                     }
                     return deal_list;
@@ -556,8 +601,12 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                     vector<json> products = data.value("products", vector<json>());
                     vector<json> services = data.value("services", vector<json>());
                     string dateTime = data["dateTime"];
-                    int duration = data.value("duration", 0);
 
+                    // Эти поля будут суммироваться:
+                    // duration – суммарная длительность по инструментам
+                    // duration_service – суммарная длительность по услугам
+                    int total_duration = 0;
+                    int total_duration_service = 0;
                     double total_cost = 0.0;
 
                     auto conn = connection_pool.acquire();
@@ -572,7 +621,8 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                     else {
                         pqxx::result new_client_res = txn.exec_params(
                             "INSERT INTO clients_info (name, phone_number, email) VALUES ($1, $2, $3) RETURNING id",
-                            clientName, clientPhone, clientEmail);
+                            clientName, clientPhone, clientEmail
+                        );
                         client_id = new_client_res[0]["id"].as<int>();
                     }
 
@@ -580,22 +630,28 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                     for (const auto& tool : tools) {
                         int tool_id = tool["id"];
                         int amount = tool["amount"];
-                        int duration = tool["duration"];
+                        int tool_duration = tool["duration"];
 
                         pqxx::result tool_res = txn.exec_params("SELECT amount, price FROM tools WHERE id = $1", tool_id);
                         if (tool_res.empty()) {
-                            throw std::runtime_error("Инструмент с ID " + to_string(tool_id) + " не существует");
+                            throw std::runtime_error("Инструмент с ID " + std::to_string(tool_id) + " не существует");
                         }
 
                         int available = tool_res[0]["amount"].as<int>();
                         double price = tool_res[0]["price"].as<double>();
 
                         if (available < amount) {
-                            throw std::runtime_error("Недостаточное количество инструмента с ID " + to_string(tool_id));
+                            throw std::runtime_error("Недостаточное количество инструмента с ID " + std::to_string(tool_id));
                         }
 
                         txn.exec_params("UPDATE tools SET amount = amount - $1 WHERE id = $2", amount, tool_id);
-                        total_cost += price * amount * duration / 60;
+
+                        // Стоимость инструмента зависит от количества и длительности (приводим длительность к часам, если нужно)
+                        double cost_for_tools = price * amount * (static_cast<double>(tool_duration) / 60.0);
+                        total_cost += cost_for_tools;
+
+                        // Суммируем длительность инструментов в общий duration
+                        total_duration += tool_duration;
                     }
 
                     // Обработка продуктов
@@ -605,14 +661,14 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
 
                         pqxx::result product_res = txn.exec_params("SELECT amount, price FROM products WHERE id = $1", product_id);
                         if (product_res.empty()) {
-                            throw std::runtime_error("Продукт с ID " + to_string(product_id) + " не существует");
+                            throw std::runtime_error("Продукт с ID " + std::to_string(product_id) + " не существует");
                         }
 
                         int available = product_res[0]["amount"].as<int>();
                         double price = product_res[0]["price"].as<double>();
 
                         if (available < amount) {
-                            throw std::runtime_error("Недостаточное количество продукта с ID " + to_string(product_id));
+                            throw std::runtime_error("Недостаточное количество продукта с ID " + std::to_string(product_id));
                         }
 
                         txn.exec_params("UPDATE products SET amount = amount - $1 WHERE id = $2", amount, product_id);
@@ -622,31 +678,46 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
                     // Обработка услуг
                     for (const auto& service : services) {
                         int service_id = service["id"];
+                        // Получение длительности услуги из данных запроса или установка значения по умолчанию
+                        int requested_service_duration = service.value("duration", 0);
 
+                        // Исправленный запрос: выбираем только price
                         pqxx::result service_res = txn.exec_params("SELECT price FROM contractors_services WHERE id = $1", service_id);
                         if (service_res.empty()) {
-                            throw std::runtime_error("Услуга с ID " + to_string(service_id) + " не существует");
+                            throw std::runtime_error("Услуга с ID " + std::to_string(service_id) + " не существует");
                         }
 
                         double price = service_res[0]["price"].as<double>();
-                        total_cost += price;
+                        // Так как duration отсутствует в contractors_services, используем только запрошенную длительность
+                        int final_service_duration = (requested_service_duration > 0) ? requested_service_duration : 0; // Или установите другое значение по умолчанию
+
+                        // Расчет стоимости услуги по длительности
+                        double cost_for_services = price * (static_cast<double>(final_service_duration) / 60.0);
+                        total_cost += cost_for_services;
+
+                        // Суммируем длительности услуг в duration_service
+                        total_duration_service += final_service_duration;
                     }
 
                     // Вставка ресурса
-                    stringstream ss;
-                    ss << "Resource_" << chrono::system_clock::now().time_since_epoch().count();
-                    string resource_name = ss.str();
+                    std::stringstream ss;
+                    ss << "Resource_" << std::chrono::system_clock::now().time_since_epoch().count();
+                    std::string resource_name = ss.str();
 
                     pqxx::result resource_res = txn.exec_params("INSERT INTO resources (name, price) VALUES ($1, $2) RETURNING id", resource_name, total_cost);
                     int resource_id = resource_res[0]["id"].as<int>();
 
-                    // Вставка сделки
-                    txn.exec_params( "INSERT INTO deals (client_id, resource_id, create_date, scheduled_date, duration) VALUES ($1, $2, NOW(), $3, $4)", client_id, resource_id, dateTime, duration );
+                    // Вставка сделки с учетом duration и duration_service
+                    txn.exec_params(
+                        "INSERT INTO deals (client_id, resource_id, create_date, scheduled_date, duration, duration_service) "
+                        "VALUES ($1, $2, NOW(), $3, $4, $5)",
+                        client_id, resource_id, dateTime, total_duration, total_duration_service
+                    );
                     txn.commit();
                     connection_pool.release(conn);
 
                     // Инвалидация кэша
-                    cache.invalidate("deals");
+                    cache.invalidate_by_prefix("deals_");
                     cache.invalidate("tools");
                     cache.invalidate("products");
                     cache.invalidate("services");
@@ -746,6 +817,10 @@ int main() {
     create_deal_resource->set_path("/createDeal");
     create_deal_resource->set_method_handler("POST", post_create_deal_handler);
 
+    auto script_resource = make_shared<Resource>();
+    script_resource->set_path("/script.js");
+    script_resource->set_method_handler("GET", script_handler);
+
     // Настройка SSL
     auto ssl_settings = make_shared<restbed::SSLSettings>();
     ssl_settings->set_http_disabled(true);
@@ -773,6 +848,7 @@ int main() {
     service.publish(create_deal_resource);
     service.publish(logout_resource);
     service.publish(css_resource);
+    service.publish(script_resource);
 
     // Запуск сервиса
     service.start(settings);
