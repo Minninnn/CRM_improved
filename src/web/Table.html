@@ -1,20 +1,14 @@
 <!doctype html>
 <html lang="ru">
 <head>
-    <!--
-        Код улучшен для большей структурированности, читаемости и удобства поддержки.
-        Добавлены комментарии на русском языке, изменена организация кода, упрощена логика,
-        улучшена обработка ошибок, повышена семантика.
-    -->
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CRM V1 Улучшенная</title>
-
-    <!-- Подключение Bootstrap CSS и иконок -->
+    <title>CRM V1 с AG Grid</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/styles/ag-theme-alpine.css">
     <link rel="stylesheet" href="custom.css">
 </head>
 <body>
@@ -34,6 +28,34 @@
             </div>
         </div>
     </nav>
+
+    <div class="container-fluid" style="padding-top: 4rem;">
+        <div class="d-flex justify-content-center align-items-center my-3">
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary" id="prevWeek">
+                    <i class="bi bi-chevron-double-left"></i>
+                </button>
+                <button class="btn btn-outline-secondary" id="prevDay">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button id="currentWeek" class="btn btn-primary">
+                    <i class="bi bi-calendar-event me-1"></i>Сегодня
+                </button>
+                <button class="btn btn-outline-secondary" id="nextDay">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <button class="btn btn-outline-secondary" id="nextWeek">
+                    <i class="bi bi-chevron-double-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <main id="main" class="flex-fill">
+                <div class="ag-theme-alpine" style="width: 100%; height: 80vh;" id="scheduleGrid"></div>
+            </main>
+        </div>
+    </div>
 
     <!-- Нижняя панель навигации (для мобильных устройств) -->
     <div id="nav-bottom" class="nav fixed-bottom shadow d-block d-md-none d-flex justify-content-around">
@@ -61,149 +83,23 @@
                     <a class="nav-link m-1" data-bs-toggle="offcanvas" href="#offsidebar-left" role="button" aria-controls="offsidebar-left"><i class="bi bi-gear-fill"></i></a>
                 </div>
             </nav>
-
-            <!-- Основная область контента -->
-            <main id="main" class="flex-fill">
-                <div class="d-flex flex-column">
-
-                    <!-- Панель с настройками отображения таблицы (вертикально/горизонтально, показывать пустые слоты, подробности) -->
-                    <div id="collapseSettingsTabl" class="collapse">
-                        <div id="SettingsTabl" class="d-flex flex-row">
-
-                            <!-- Переключатель направления отображения -->
-                            <div class="btn-group-vertical" role="group" aria-label="HV Group">
-                                <input type="radio" class="btn-check" name="btnradiodir" id="btnradioVdir" autocomplete="off" checked>
-                                <label class="btn btn-light" for="btnradioVdir">Вертикально</label>
-
-                                <input type="radio" class="btn-check" name="btnradiodir" id="btnradioHdir" autocomplete="off">
-                                <label class="btn btn-light" for="btnradioHdir">Горизонтально</label>
-                            </div>
-
-                            <!-- Настройки отображения -->
-                            <div id="radioSettingsTabl" class="card flex-fill p-2">
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckZeroSlots" checked>
-                                    <label class="form-check-label" for="flexSwitchCheckZeroSlots">Пустые слоты</label>
-                                </div>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDetails" checked>
-                                    <label class="form-check-label" for="flexSwitchCheckDetails">Подробности сделки</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Переключение недель -->
-                    <div class="d-flex flex-row justify-content-center align-items-center">
-                        <div class="arrowLeftCollapseSettingsTabl">
-                            <i id="prevWeek" class="bi bi-caret-left rewind-button"></i>
-                        </div>
-
-                        <div class="flex-fill spaceCollapseSettingsTabl"></div>
-
-                        <div class="returnCurrentWeek">
-                            <button id="currentWeek" class="btn btn-light"><i class="bi bi-calendar-event"></i></button>
-                        </div>
-
-                        <div class="flex-fill spaceCollapseSettingsTabl"></div>
-
-                        <div class="arrowRightCollapseSettingsTabl">
-                            <i id="nextWeek" class="bi bi-caret-right rewind-button"></i>
-                        </div>
-                    </div>
-
-                    <!-- Кнопка открытия панели с настройками таблицы -->
-                    <div class="d-flex flex-row justify-content-center">
-                        <div class="buttonOpenCollapseSettingsTabl">
-                            <a class="" data-bs-toggle="collapse" href="#collapseSettingsTabl"><i class="bi bi-arrow-bar-down"></i></a>
-                        </div>
-                    </div>
-
-                    <!-- Переключение дней недели -->
-                    <div class="d-flex flex-row justify-content-center">
-                        <div class="arrow-and-time d-flex justify-content-center align-items-center">
-                            <i id="prevDay" class="bi bi-caret-left rewind-button"></i>
-                        </div>
-
-                        <div class="d-flex flex-fill">
-                            <!-- Отображение дней недели -->
-                            <!-- Идентификаторы day0 ... day6 используются для подстановки дат -->
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day0">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day1">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day2">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day3">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day4">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day5">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                            <div class="d-flex flex-fill justify-content-center align-items-end cellrowTable">
-                                <div class="dateTable" id="day6">
-                                    <p class="date"></p>
-                                    <p class="weekday"></p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="arrow-and-time d-flex justify-content-center align-items-center">
-                            <i id="nextDay" class="bi bi-caret-right rewind-button"></i>
-                        </div>
-                    </div>
-
-                    <!-- Основной контейнер расписания (сетка времени) -->
-                    <div id="schedule-container">
-                        <!-- Левый контейнер с временем -->
-                        <div id="time-container-left"></div>
-                        <!-- Табличная часть с ячейками расписания -->
-                        <div id="table-container"></div>
-                        <!-- Правый контейнер с временем -->
-                        <div id="time-container-right"></div>
-                    </div>
-                </div>
-            </main>
         </div>
     </div>
 
-    <!-- Модальное окно для создания/редактирования сделки -->
+
     <div class="modal fade" id="dealModal" tabindex="-1" aria-labelledby="dealModalLabel" aria-hidden="true">
-        <div class="modal-dialog  modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content rounded-4 shadow-lg">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header bg-primary -white">
                     <h5 class="modal-title" id="dealModalLabel">Создать сделку</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
                     <form id="dealForm" novalidate>
-                        <!-- Свертываемый раздел "Инструменты" -->
+
                         <div class="mb-4">
-                            <button class="btn btn-secondary w-100 text-start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#toolsCollapse" aria-expanded="false" aria-controls="toolsCollapse">
+                            <button class="btn btn-secondary w-100 -start d-flex align-items-center justify-content-between"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#toolsCollapse" aria-expanded="false">
                                 <div>
                                     <i class="bi bi-tools me-2"></i> Инструменты
                                 </div>
@@ -211,14 +107,13 @@
                             </button>
                             <div class="collapse mt-2" id="toolsCollapse">
                                 <div id="toolsList" class="row g-3">
-                                    <!-- Динамически заполняемые инструменты -->
+
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Свертываемый раздел "Услуги подрядчиков" -->
                         <div class="mb-4">
-                            <button class="btn btn-secondary w-100 text-start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#servicesCollapse" aria-expanded="false" aria-controls="servicesCollapse">
+                            <button class="btn btn-secondary w-100 -start d-flex align-items-center justify-content-between"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#servicesCollapse" aria-expanded="false">
                                 <div>
                                     <i class="bi bi-briefcase me-2"></i> Услуги подрядчиков
                                 </div>
@@ -226,14 +121,13 @@
                             </button>
                             <div class="collapse mt-2" id="servicesCollapse">
                                 <div id="servicesList" class="form-check">
-                                    <!-- Динамически заполняемые услуги -->
+
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Свертываемый раздел "Продукты" -->
                         <div class="mb-4">
-                            <button class="btn btn-secondary w-100 text-start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#productsCollapse" aria-expanded="false" aria-controls="productsCollapse">
+                            <button class="btn btn-secondary w-100 -start d-flex align-items-center justify-content-between"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#productsCollapse" aria-expanded="false">
                                 <div>
                                     <i class="bi bi-box-seam me-2"></i> Продукты
                                 </div>
@@ -241,22 +135,19 @@
                             </button>
                             <div class="collapse mt-2" id="productsCollapse">
                                 <div id="productsList" class="row g-3">
-                                    <!-- Динамически заполняемые продукты -->
+
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Данные клиента -->
                         <div class="mb-3">
                             <div class="form-floating">
                                 <input type="text" class="form-control" id="clientName" placeholder="Имя клиента" required>
-                                <label for="clientName">Имя клиента <span class="text-danger">*</span></label>
+                                <label for="clientName">Имя клиента <span class="-danger">*</span></label>
                                 <div class="invalid-feedback">
                                     Пожалуйста, введите имя клиента.
                                 </div>
                             </div>
                         </div>
-
                         <div class="mb-3">
                             <div class="form-floating">
                                 <input type="tel" class="form-control" id="clientPhone" placeholder="Номер телефона">
@@ -266,7 +157,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="mb-4">
                             <div class="form-floating">
                                 <input type="email" class="form-control" id="clientEmail" placeholder="Email">
@@ -276,7 +166,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <input type="hidden" id="selectedDateTime">
                     </form>
                 </div>
@@ -289,11 +178,103 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="editDealModal" tabindex="-1" aria-labelledby="editDealModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-4 shadow-lg">
+                <div class="modal-header bg-warning -white">
+                    <h5 class="modal-title" id="editDealModalLabel">Редактировать сделку</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDealForm" novalidate>
 
-    <!-- Подключение Bootstrap JS -->
+                        <div class="mb-4">
+                            <button class="btn btn-secondary w-100 -start d-flex align-items-center justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#editToolsCollapse" aria-expanded="false">
+                                <div>
+                                    <i class="bi bi-tools me-2"></i> Инструменты
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="collapse mt-2" id="editToolsCollapse">
+                                <div id="editToolsList" class="row g-3">
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <button class="btn btn-secondary w-100 -start d-flex align-items-center justify-content-between"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#editServicesCollapse" aria-expanded="false">
+                                <div>
+                                    <i class="bi bi-briefcase me-2"></i> Услуги подрядчиков
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="collapse mt-2" id="editServicesCollapse">
+                                <div id="editServicesList" class="form-check">
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <button class="btn btn-secondary w-100 -start d-flex align-items-center justify-content-between"
+                                    type="button" data-bs-toggle="collapse" data-bs-target="#editProductsCollapse" aria-expanded="false">
+                                <div>
+                                    <i class="bi bi-box-seam me-2"></i> Продукты
+                                </div>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            <div class="collapse mt-2" id="editProductsCollapse">
+                                <div id="editProductsList" class="row g-3">
+
+                                </div>
+                            </div>
+                        </div>                    <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="editClientName" placeholder="Имя клиента" required>
+                                <label for="editClientName">Имя клиента <span class="-danger">*</span></label>
+                                <div class="invalid-feedback">
+                                    Пожалуйста, введите имя клиента.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="editClientPhone" placeholder="Номер телефона">
+                                <label for="editClientPhone">Номер телефона</label>
+                                <div class="invalid-feedback">
+                                    Введите корректный номер телефона или оставьте поле пустым.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="editClientEmail" placeholder="Email">
+                                <label for="editClientEmail">Email</label>
+                                <div class="invalid-feedback">
+                                    Введите корректный Email или оставьте поле пустым.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div class="form-floating">
+                                <input type="datetime-local" class="form-control" id="editDateTimeInput" placeholder="Дата и время">
+                                <label for="editDateTimeInput">Дата и время</label>
+                            </div>
+                        </div>
+                        <input type="hidden" id="editDealId">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-warning" id="updateDealButton">
+                        <i class="bi bi-pencil-square me-2"></i> Обновить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@28.2.1/dist/ag-grid-community.min.noStyle.js"></script>
     <script src="script.js"></script>
-
 </body>
 </html>

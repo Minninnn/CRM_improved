@@ -1,9 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Массивы со строковыми значениями для дат
-    const weekdays = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    // Инициализация модальных окон Bootstrap
+    const dealModal = new bootstrap.Modal(document.getElementById('dealModal'));
+    const editDealModal = new bootstrap.Modal(document.getElementById('editDealModal'));
 
-    // Элементы с DOM
+    // Массивы с названиями дней недели и месяцев на русском языке
+    const weekdays = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+    // Элементы формы для создания новой сделки
     const toolsList = document.getElementById('toolsList');
     const productsList = document.getElementById('productsList');
     const servicesList = document.getElementById('servicesList');
@@ -11,15 +16,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const dealModalElement = document.getElementById('dealModal');
     const saveDealButton = document.getElementById('saveDealButton');
 
-    // Глобальные переменные для смещений недели/дня
+    // Элементы для редактирования сделки
+    const editToolsList = document.getElementById('editToolsList');
+    const editProductsList = document.getElementById('editProductsList');
+    const editServicesList = document.getElementById('editServicesList');
+    const editDealIdInput = document.getElementById('editDealId');
+    const editClientName = document.getElementById('editClientName');
+    const editClientPhone = document.getElementById('editClientPhone');
+    const editClientEmail = document.getElementById('editClientEmail');
+    const editDateTimeInput = document.getElementById('editDateTimeInput');
+    const updateDealButton = document.getElementById('updateDealButton');
+
+    // Кнопки навигации недель/дней
+    const prevWeekButton = document.getElementById('prevWeek');
+    const nextWeekButton = document.getElementById('nextWeek');
+    const currentWeekButton = document.getElementById('currentWeek');
+    const prevDayButton = document.getElementById('prevDay');
+    const nextDayButton = document.getElementById('nextDay');
+
+    // Глобальные переменные для смещений
     let weekOffset = 0;
     let dayOffset = 0;
     let displayStartDate = null;
 
     // Хранилище сделок
+    // Ключ: ISO-строка даты/времени, значение: массив сделок
     const dealsMap = new Map();
 
-    // Универсальная функция загрузки данных
+    // Ссылка на экземпляр AG Grid
+    let gridApi;
+
+    //================================================================================
+    // 1) Функция для загрузки справочных данных (инструменты, продукты, услуги)
+    //================================================================================
     const fetchData = async (url) => {
         try {
             const response = await fetch(url, { credentials: 'same-origin' });
@@ -28,12 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return await response.json();
         } catch (error) {
-            console.error(`Ошибка при загрузке данных с ${url}:`, error);
+            console.error(`Ошибка при загрузке данных: ${error}`);
             throw error;
         }
     };
 
-    // Загрузка начальных данных
     const loadInitialData = async () => {
         try {
             const [tools, products, services] = await Promise.all([
@@ -41,20 +69,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchData('/api/products'),
                 fetchData('/api/services')
             ]);
-
+            // Заполняем списки для модальных окон
             populateToolsList(tools);
             populateProductsList(products);
             populateServicesList(services);
-
+            populateEditToolsList(tools);
+            populateEditProductsList(products);
+            populateEditServicesList(services);
         } catch (error) {
-            alert('Ошибка при загрузке данных. Пожалуйста, попробуйте снова позже.');
+            alert('Ошибка при загрузке данных. Пожалуйста, попробуйте позже.');
         }
     };
 
+    //================================================================================
+    // 2) Заполнение списков инструментов, продуктов, услуг
+    //================================================================================
     function populateToolsList(tools) {
+        if (!toolsList) return;
         toolsList.innerHTML = '';
         const fragment = document.createDocumentFragment();
-
         tools.forEach(tool => {
             const div = document.createElement('div');
             div.classList.add('tool-item', 'mb-3');
@@ -71,8 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
             amountInput.dataset.toolId = tool.id;
             amountInput.dataset.availableAmount = tool.amount;
             amountInput.classList.add('form-control', 'amount-input', 'mt-1');
-            amountInput.placeholder = 'Количество';
 
+            // Длительность
             const durationContainer = document.createElement('div');
             durationContainer.classList.add('d-flex', 'align-items-center', 'mt-2');
 
@@ -83,22 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
             durationInput.value = '30';
             durationInput.dataset.toolId = tool.id;
             durationInput.classList.add('form-control', 'duration-input');
-            durationInput.placeholder = 'Продолжительность (минуты)';
             durationInput.title = 'Минимальная продолжительность: 30 минут';
 
             const durationDisplay = document.createElement('span');
             durationDisplay.classList.add('ms-2', 'duration-display');
             durationDisplay.textContent = '0.5 ч';
 
-            // Обработчик изменения значения длительности для обновления отображения часов
             durationInput.addEventListener('input', (event) => {
                 const minutes = parseInt(event.target.value, 10);
-                if (!isNaN(minutes) && minutes >= 30) {
-                    const hours = (minutes / 60).toFixed(1);
-                    durationDisplay.textContent = `${hours} ч`;
-                } else {
-                    durationDisplay.textContent = '0.5 ч';
-                }
+                durationDisplay.textContent = (minutes >= 30 ? (minutes / 60).toFixed(1) : 0.5) + ' ч';
             });
 
             durationContainer.appendChild(durationInput);
@@ -109,14 +135,13 @@ document.addEventListener('DOMContentLoaded', () => {
             div.appendChild(durationContainer);
             fragment.appendChild(div);
         });
-
         toolsList.appendChild(fragment);
     }
 
     function populateProductsList(products) {
+        if (!productsList) return;
         productsList.innerHTML = '';
         const fragment = document.createDocumentFragment();
-
         products.forEach(product => {
             const div = document.createElement('div');
             div.classList.add('product-item', 'mb-2');
@@ -136,15 +161,13 @@ document.addEventListener('DOMContentLoaded', () => {
             div.appendChild(input);
             fragment.appendChild(div);
         });
-
         productsList.appendChild(fragment);
     }
 
-    // Обновлённая функция populateServicesList с добавлением поля ввода длительности
     function populateServicesList(services) {
+        if (!servicesList) return;
         servicesList.innerHTML = '';
         const fragment = document.createDocumentFragment();
-
         services.forEach(service => {
             const div = document.createElement('div');
             div.classList.add('service-item', 'mb-2');
@@ -159,10 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
             label.textContent = `${service.name} (исполнитель: ${service.contractor})`;
             label.classList.add('form-check-label');
 
-            // Создание контейнера для ввода длительности
             const durationContainer = document.createElement('div');
             durationContainer.classList.add('d-flex', 'align-items-center', 'mt-1');
-            durationContainer.style.display = 'none'; // Изначально скрыт
+            durationContainer.style.display = 'none';
 
             const durationInput = document.createElement('input');
             durationInput.type = 'number';
@@ -170,159 +192,388 @@ document.addEventListener('DOMContentLoaded', () => {
             durationInput.step = '30';
             durationInput.value = '30';
             durationInput.dataset.serviceId = service.id;
-            durationInput.classList.add('form-control', 'service-duration-input', 'me-2');
-            durationInput.placeholder = 'Продолжительность (минуты)';
-            durationInput.title = 'Минимальная продолжительность: 30 минут';
+            durationInput.classList.add('form-control', 'edit-service-duration-input', 'me-2');
 
             const durationDisplay = document.createElement('span');
             durationDisplay.classList.add('duration-display');
             durationDisplay.textContent = '0.5 ч';
 
-            durationContainer.appendChild(durationInput);
-            durationContainer.appendChild(durationDisplay);
-
-            // Обработчик изменения чекбокса для показа/скрытия поля длительности
             checkbox.addEventListener('change', (event) => {
                 if (event.target.checked) {
                     durationContainer.style.display = 'flex';
                 } else {
                     durationContainer.style.display = 'none';
-                    durationInput.value = '30'; // Сброс значения до 30 минут
+                    durationInput.value = '30';
                     durationDisplay.textContent = '0.5 ч';
                 }
             });
 
-            // Обработчик изменения значения длительности для обновления отображения часов
             durationInput.addEventListener('input', (event) => {
                 const minutes = parseInt(event.target.value, 10);
-                if (!isNaN(minutes) && minutes >= 30) {
-                    const hours = (minutes / 60).toFixed(1);
-                    durationDisplay.textContent = `${hours} ч`;
-                } else {
-                    durationDisplay.textContent = '0.5 ч';
-                }
+                durationDisplay.textContent = (minutes >= 30 ? (minutes / 60).toFixed(1) : 0.5) + ' ч';
             });
+
+            durationContainer.appendChild(durationInput);
+            durationContainer.appendChild(durationDisplay);
 
             div.appendChild(checkbox);
             div.appendChild(label);
             div.appendChild(durationContainer);
             fragment.appendChild(div);
         });
-
         servicesList.appendChild(fragment);
     }
 
+    // Аналогичные функции для списков в окне редактирования
+    function populateEditToolsList(tools) {
+        if (!editToolsList) return;
+        editToolsList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        tools.forEach(tool => {
+            const div = document.createElement('div');
+            div.classList.add('tool-item', 'mb-3');
+
+            const label = document.createElement('label');
+            label.classList.add('form-label', 'fw-bold');
+            label.textContent = `${tool.name} (доступно: ${tool.amount})`;
+
+            const amountInput = document.createElement('input');
+            amountInput.type = 'number';
+            amountInput.min = '0';
+            amountInput.max = tool.amount;
+            amountInput.value = '0';
+            amountInput.dataset.toolId = tool.id;
+            amountInput.dataset.availableAmount = tool.amount;
+            amountInput.classList.add('form-control', 'edit-amount-input', 'mt-1');
+
+            // Длительность
+            const durationContainer = document.createElement('div');
+            durationContainer.classList.add('d-flex', 'align-items-center', 'mt-2');
+
+            const durationInput = document.createElement('input');
+            durationInput.type = 'number';
+            durationInput.min = '30';
+            durationInput.step = '30';
+            durationInput.value = '30';
+            durationInput.dataset.toolId = tool.id;
+            durationInput.classList.add('form-control', 'edit-duration-input');
+
+            const durationDisplay = document.createElement('span');
+            durationDisplay.classList.add('ms-2', 'duration-display');
+            durationDisplay.textContent = '0.5 ч';
+
+            durationInput.addEventListener('input', (event) => {
+                const minutes = parseInt(event.target.value, 10);
+                durationDisplay.textContent = (minutes >= 30 ? (minutes / 60).toFixed(1) : 0.5) + ' ч';
+            });
+
+            durationContainer.appendChild(durationInput);
+            durationContainer.appendChild(durationDisplay);
+
+            div.appendChild(label);
+            div.appendChild(amountInput);
+            div.appendChild(durationContainer);
+            fragment.appendChild(div);
+        });
+        editToolsList.appendChild(fragment);
+    }
+
+    function populateEditProductsList(products) {
+        if (!editProductsList) return;
+        editProductsList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        products.forEach(product => {
+            const div = document.createElement('div');
+            div.classList.add('product-item', 'mb-2');
+
+            const label = document.createElement('label');
+            label.textContent = `${product.name} (доступно: ${product.amount})`;
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.max = product.amount;
+            input.value = '0';
+            input.dataset.productId = product.id;
+            input.classList.add('form-control', 'edit-product-amount-input', 'mt-1');
+
+            div.appendChild(label);
+            div.appendChild(input);
+            fragment.appendChild(div);
+        });
+        editProductsList.appendChild(fragment);
+    }
+
+    function populateEditServicesList(services) {
+        if (!editServicesList) return;
+        editServicesList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        services.forEach(service => {
+            const div = document.createElement('div');
+            div.classList.add('service-item', 'mb-2');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.dataset.serviceId = service.id;
+            checkbox.dataset.contractor = service.contractor;
+            checkbox.classList.add('form-check-input', 'ms-2', 'me-2');
+
+            const label = document.createElement('label');
+            label.textContent = `${service.name} (исполнитель: ${service.contractor})`;
+            label.classList.add('form-check-label');
+
+            const durationContainer = document.createElement('div');
+            durationContainer.classList.add('d-flex', 'align-items-center', 'mt-1');
+            durationContainer.style.display = 'none';
+
+            const durationInput = document.createElement('input');
+            durationInput.type = 'number';
+            durationInput.min = '30';
+            durationInput.step = '30';
+            durationInput.value = '30';
+            durationInput.dataset.serviceId = service.id;
+            durationInput.classList.add('form-control', 'edit-service-duration-input', 'me-2');
+
+            const durationDisplay = document.createElement('span');
+            durationDisplay.classList.add('duration-display');
+            durationDisplay.textContent = '0.5 ч';
+
+            checkbox.addEventListener('change', (event) => {
+                if (event.target.checked) {
+                    durationContainer.style.display = 'flex';
+                } else {
+                    durationContainer.style.display = 'none';
+                    durationInput.value = '30';
+                    durationDisplay.textContent = '0.5 ч';
+                }
+            });
+
+            durationInput.addEventListener('input', (event) => {
+                const minutes = parseInt(event.target.value, 10);
+                durationDisplay.textContent = (minutes >= 30 ? (minutes / 60).toFixed(1) : 0.5) + ' ч';
+            });
+
+            durationContainer.appendChild(durationInput);
+            durationContainer.appendChild(durationDisplay);
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            div.appendChild(durationContainer);
+            fragment.appendChild(div);
+        });
+        editServicesList.appendChild(fragment);
+    }
+
+    //================================================================================
+    // 3) Логика AG Grid (создание столбцов, строк и рендер сделок)
+    //================================================================================
+    // Генерируем список 30-минутных интервалов с 10:00 до 20:00
     function generateTimeSlots() {
-        const startTime = 10 * 60;
-        const endTime = 20 * 60;
-        const step = 30;
-        const timeContainerLeft = document.getElementById('time-container-left');
-        const timeContainerRight = document.getElementById('time-container-right');
-
-        timeContainerLeft.innerHTML = '';
-        timeContainerRight.innerHTML = '';
-
-        const fragmentLeft = document.createDocumentFragment();
-        const fragmentRight = document.createDocumentFragment();
-
-        for (let minutes = startTime; minutes <= endTime; minutes += step) {
-            const timeString = formatTime(minutes);
-
-            const timeElementLeft = document.createElement('div');
-            timeElementLeft.classList.add('time-cell');
-            timeElementLeft.textContent = timeString;
-
-            fragmentLeft.appendChild(timeElementLeft);
-            const timeElementRight = timeElementLeft.cloneNode(true);
-            fragmentRight.appendChild(timeElementRight);
+        const slots = [];
+        let start = 10 * 60; // 10:00 in minutes
+        const end = 20 * 60;  // 20:00 in minutes
+        while (start <= end) {
+            slots.push(start);
+            start += 30;
         }
-
-        timeContainerLeft.appendChild(fragmentLeft);
-        timeContainerRight.appendChild(fragmentRight);
+        return slots;
     }
 
     function formatTime(totalMinutes) {
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
-        const paddedHours = hours.toString().padStart(2, '0');
-        const paddedMinutes = minutes.toString().padStart(2, '0');
-        return `${paddedHours}:${paddedMinutes}`;
+        return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
     }
 
-    function generateScheduleGrid() {
-        const tableContainer = document.getElementById('table-container');
-        const timeCells = document.querySelectorAll('#time-container-left .time-cell');
-        tableContainer.innerHTML = '';
+    // Формируем колонки для всех дней (7 шт. + колонка Time)
+    const columnDefs = [
+        {
+            headerName: 'Время',
+            field: 'time',
+            width: 90,
+        },
+        {
+            headerName: 'День 1',
+            field: 'day0',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        },
+        {
+            headerName: 'День 2',
+            field: 'day1',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        },
+        {
+            headerName: 'День 3',
+            field: 'day2',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        },
+        {
+            headerName: 'День 4',
+            field: 'day3',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        },
+        {
+            headerName: 'День 5',
+            field: 'day4',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        },
+        {
+            headerName: 'День 6',
+            field: 'day5',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        },
+        {
+            headerName: 'День 7',
+            field: 'day6',
+            cellRenderer: 'dealsCellRenderer',
+            flex: 1
+        }
+    ];
 
-        const fragment = document.createDocumentFragment();
+    // Ячеечный рендерер для отображения сделок.
+    class DealsCellRenderer {
+        init(params) {
+            this.params = params;
+            this.eGui = document.createElement('div');
+            this.eGui.style.position = 'relative';
+            this.renderCell();
+        }
 
-        timeCells.forEach(timeCell => {
-            const row = document.createElement('div');
-            row.classList.add('schedule-row');
+        renderCell() {
+            const cellValue = this.params.value; // Массив сделок или undefined
+            this.eGui.innerHTML = '';
 
-            const timeString = timeCell.textContent;
-            const [hour, minute] = timeString.split(':').map(Number);
+            // Кнопка "Добавить"
+            const addButton = document.createElement('button');
+            addButton.classList.add('btn', 'btn-success', 'btn-sm');
+            addButton.textContent = 'Добавить';
+            addButton.style.margin = '2px';
+            addButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // При клике — открываем модальное окно для создания сделки
+                const rowTime = this.params.data.timeInMinutes;
+                const dayIndex = Number(this.params.colDef.field.replace('day', ''));
+                const cellDate = getCellDateTime(rowTime, dayIndex);
+                openDealModal(cellDate);
+            });
 
-            for (let i = 0; i < 7; i++) {
-                const cell = document.createElement('div');
-                cell.classList.add('schedule-cell');
-                cell.dataset.datetime = getCellDateTimeISO(hour, minute, i);
-
-                const dealsContainer = document.createElement('div');
-                dealsContainer.classList.add('deals-container');
-                cell.appendChild(dealsContainer);
-
-                const dealOptions = document.createElement('div');
-                dealOptions.classList.add('deal-options');
-
-                const editButton = document.createElement('button');
-                editButton.textContent = 'Редактировать';
-                editButton.classList.add('btn', 'btn-sm', 'btn-primary', 'me-1');
-                editButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openEditDealModal(cell.dataset.datetime);
+            // Если есть сделки, выводим их
+            if (cellValue && Array.isArray(cellValue) && cellValue.length > 0) {
+                cellValue.forEach(deal => {
+                    const dealDiv = document.createElement('div');
+                    dealDiv.classList.add('badge', 'bg-info', '-dark', 'd-block', 'mb-1');
+                    const durationHours = deal.duration ? (deal.duration / 60).toFixed(1) : '0.5';
+                    dealDiv.textContent = `${deal.clientName} - ${durationHours} ч`;
+                    dealDiv.addEventListener('click', (event) => {
+                        event.stopPropagation();
+                        // Открыть модальное окно редактирования
+                        openEditDealModal(deal.id);
+                    });
+                    this.eGui.appendChild(dealDiv);
                 });
-
-                const addButton = document.createElement('button');
-                addButton.textContent = 'Добавить';
-                addButton.classList.add('btn', 'btn-sm', 'btn-success');
-                addButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openDealModal(new Date(cell.dataset.datetime));
-                });
-
-                dealOptions.appendChild(editButton);
-                dealOptions.appendChild(addButton);
-                cell.appendChild(dealOptions);
-
-                row.appendChild(cell);
             }
 
-            fragment.appendChild(row);
-        });
+            // Добавляем кнопку
+            this.eGui.appendChild(addButton);
+        }
 
-        tableContainer.appendChild(fragment);
-        fetchDealsAndUpdateCells();
+        getGui() {
+            return this.eGui;
+        }
+
+        refresh(params) {
+            this.params = params;
+            this.renderCell();
+            return true;
+        }
     }
 
-    function getCellDateTimeISO(hour, minute, dayIndex) {
+    //================================================================================
+    // 4) Генерация rowData для AG Grid
+    //================================================================================
+    function buildRowData() {
+        const timeslots = generateTimeSlots();
+        return timeslots.map(totalMinutes => {
+            const row = {
+                time: formatTime(totalMinutes),
+                timeInMinutes: totalMinutes
+            };
+            for (let i = 0; i < 7; i++) {
+                const isoStr = getCellDateTimeISO(totalMinutes, i);
+                const dealsInCell = dealsMap.get(isoStr) || [];
+                row['day' + i] = dealsInCell;
+            }
+            return row;
+        });
+    }
+
+    function getCellDateTimeISO(minutes, dayIndex) {
         const cellDate = new Date(displayStartDate);
-        cellDate.setDate(displayStartDate.getDate() + dayIndex);
-        cellDate.setHours(hour, minute, 0, 0);
+        cellDate.setDate(cellDate.getDate() + dayIndex);
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        cellDate.setHours(hours, mins, 0, 0);
         return cellDate.toISOString();
     }
 
-    async function fetchDealsAndUpdateCells() {
-        const startDate = displayStartDate.toISOString();
+    function getCellDateTime(minutes, dayIndex) {
+        const iso = getCellDateTimeISO(minutes, dayIndex);
+        return new Date(iso);
+    }
+
+    //================================================================================
+    // 5) Инициализация самой AG Grid
+    //================================================================================
+    function initAGGrid() {
+        const gridOptions = {
+            columnDefs: columnDefs,
+            rowData: [],
+            defaultColDef: {
+            resizable: true,
+            },
+            components: {
+                dealsCellRenderer: DealsCellRenderer
+            },
+            domLayout: 'autoHeight',
+            onFirstDataRendered: (params) => {
+                params.api.sizeColumnsToFit();
+            },
+        };
+        const eGridDiv = document.getElementById('scheduleGrid');
+        if (!eGridDiv) {
+            console.error('Не найден контейнер #scheduleGrid для инициализации AG Grid');
+            return;
+        }
+        gridApi = new agGrid.Grid(eGridDiv, gridOptions);
+    }
+
+    function updateGridData() {
+        if (!gridApi) return;
+        const rowData = buildRowData();
+        gridApi.gridOptions.api.setRowData(rowData);
+        updateWeekDaysHeader();
+    }
+
+    //================================================================================
+    // 6) Загрузка сделок с сервера и заполнение dealsMap
+    //================================================================================
+    async function fetchDeals() {
+        const startDateStr = displayStartDate.toISOString();
         const endDate = new Date(displayStartDate);
         endDate.setDate(endDate.getDate() + 7);
-        const endDateString = endDate.toISOString();
+        const endDateStr = endDate.toISOString();
 
         try {
-            const data = await fetchData(`/api/deals?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDateString)}`);
-
+            const data = await fetchData(
+                `/api/deals?start_date=${encodeURIComponent(startDateStr)}&end_date=${encodeURIComponent(endDateStr)}`
+            );
             dealsMap.clear();
-
             data.forEach(deal => {
                 const scheduledDateTime = new Date(deal.scheduled_date).toISOString();
                 if (!dealsMap.has(scheduledDateTime)) {
@@ -330,349 +581,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 dealsMap.get(scheduledDateTime).push(deal);
             });
-
-            updateCellsWithDeals();
-
+            updateGridData();
         } catch (error) {
-            console.error('Ошибка при получении сделок:', error);
+            console.error('Ошибка при загрузке сделок:', error);
         }
     }
 
-    function updateCellsWithDeals() {
-        // Очистка предыдущих отображений сделок
-        document.querySelectorAll('.deals-container').forEach(container => {
-            container.innerHTML = '';
-        });
-
-        // Удаление классов у всех ячеек
-        document.querySelectorAll('.schedule-cell').forEach(cell => {
-            cell.classList.remove('has-deal', 'split', 'deal-start', 'deal-end');
-            cell.dataset.dealId = '';
-        });
-
-        dealsMap.forEach((deals, datetime) => {
-            deals.forEach(deal => {
-
-                const cell = document.querySelector(`.schedule-cell[data-datetime="${datetime}"]`);
-                if (cell) {
-                    const dealsContainer = cell.querySelector('.deals-container');
-
-                    // Рассчёт количества ячеек, которые должна занимать сделка
-                    const slotDuration = 30; // продолжительность одного слота в минутах
-                    const dealDuration = deal.duration || 30; // продолжительность сделки в минутах
-                    const spanSlots = Math.ceil(dealDuration / slotDuration);
-
-                    // Проверка, не выходит ли сделка за границы текущей недели
-                    const startDate = new Date(datetime);
-                    const endDate = new Date(startDate);
-                    endDate.setMinutes(endDate.getMinutes() + dealDuration);
-
-                    // Проверка, что все слоты для сделки свободны
-                    let canPlaceDeal = true;
-                    for (let i = 0; i < spanSlots; i++) {
-                        const currentDateTime = new Date(startDate.getTime() + i * slotDuration * 60000).toISOString();
-                        const currentCell = document.querySelector(`.schedule-cell[data-datetime="${currentDateTime}"]`);
-                        if (!currentCell || currentCell.dataset.dealId) {
-                            canPlaceDeal = false;
-                            break;
-                        }
-                    }
-
-                    if (canPlaceDeal) {
-                        // Отметить ячейки как занятые
-                        for (let i = 0; i < spanSlots; i++) {
-                            const currentDateTime = new Date(startDate.getTime() + i * slotDuration * 60000).toISOString();
-                            const currentCell = document.querySelector(`.schedule-cell[data-datetime="${currentDateTime}"]`);
-                            if (currentCell) {
-                                currentCell.dataset.dealId = deal.id; // Использование полученного id
-                                if (i === 0) {
-                                    currentCell.classList.add('has-deal', 'deal-start');
-                                } else if (i === spanSlots - 1) {
-                                    currentCell.classList.add('deal-end');
-                                } else {
-                                    currentCell.classList.add('has-deal');
-                                }
-                            }
-                        }
-
-                        // Создание элемента сделки только в первой ячейке
-                        const dealDiv = document.createElement('div');
-                        dealDiv.classList.add('deal-item', 'badge', 'bg-info', 'text-dark', 'mb-1', 'd-block');
-                        dealDiv.style.width = `${spanSlots * 100}%`; // возможно, нужно скорректировать по дизайну
-                        if (deal.duration && Number(deal.duration) > 29) {
-                            const durationHours = formatDuration(Number(deal.duration));
-                            dealDiv.textContent = `${deal.clientName} - ${durationHours} ч`;
-                        } else {
-                            dealDiv.textContent = `${deal.clientName}`;
-                        }
-
-                        // Добавление обработчиков событий
-                        dealDiv.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            openEditDealModal(deal.id); // предполагается, что модалка может принимать id сделки
-                        });
-
-                        dealsContainer.appendChild(dealDiv);
-                    } else {
-                        console.warn(`Не удалось разместить сделку ${deal.id} из-за занятых слотов.`);
-                    }
-                }
-            });
-        });
-    }
-
-    function setupCellClickHandler() {
-        const tableContainer = document.getElementById('table-container');
-        tableContainer.addEventListener('click', (event) => {
-            const target = event.target.closest('.schedule-cell');
-            if (target) {
-                const cellDateStr = target.getAttribute('data-datetime');
-                const cellDate = new Date(cellDateStr);
-                openDealModal(cellDate);
-            }
-        });
-    }
-
-    function openDealModal(cellDate) {
-        selectedDateTimeInput.value = cellDate.toISOString();
-        const dealModal = new bootstrap.Modal(dealModalElement);
-        dealModal.show();
-    }
-
-    function openEditDealModal(dealId) {
-        // Найти сделку по id
-        let dealToEdit = null;
-        dealsMap.forEach((deals, datetime) => {
-            deals.forEach(deal => {
-                if (deal.id === dealId) {
-                    dealToEdit = deal;
-                }
-            });
-        });
-
-        if (!dealToEdit) {
-            alert('Сделка не найдена для редактирования.');
-            return;
-        }
-
-        document.getElementById('clientName').value = dealToEdit.clientName || '';
-        document.getElementById('clientPhone').value = dealToEdit.clientPhone || '';
-        document.getElementById('clientEmail').value = dealToEdit.clientEmail || '';
-        selectedDateTimeInput.value = dealToEdit.scheduled_date;
-
-        // Заполнение инструментов, продуктов и услуг
-        // Очистка предыдущих выборов
-        document.querySelectorAll('#toolsList .amount-input').forEach(input => {
-            input.value = '0';
-        });
-        document.querySelectorAll('#productsList .product-amount-input').forEach(input => {
-            input.value = '0';
-        });
-        document.querySelectorAll('#servicesList .service-item input[type="checkbox"]').forEach(checkbox => {
-            checkbox.checked = false;
-            const durationContainer = checkbox.closest('.service-item').querySelector('.d-flex');
-            durationContainer.style.display = 'none';
-            const durationInput = durationContainer.querySelector('.service-duration-input');
-            durationInput.value = '30';
-            durationContainer.querySelector('.duration-display').textContent = '0.5 ч';
-        });
-
-        // Предполагается, что dealToEdit содержит информацию о выбранных инструментах, продуктах и услугах
-        // Необходимо заполнить соответствующие поля
-
-        if (dealToEdit.tools) {
-            dealToEdit.tools.forEach(tool => {
-                const amountInput = document.querySelector(`.amount-input[data-tool-id="${tool.id}"]`);
-                if (amountInput) {
-                    amountInput.value = tool.amount;
-                    const toolItem = amountInput.closest('.tool-item');
-                    if (tool.amount > 0) {
-                        toggleDurationInput(toolItem, true);
-                        const durationInput = toolItem.querySelector('.duration-input');
-                        durationInput.value = tool.duration || '30';
-                        const durationDisplay = toolItem.querySelector('.duration-display');
-                        durationDisplay.textContent = `${formatDuration(tool.duration || 30)} ч`;
-                    }
-                }
-            });
-        }
-
-        if (dealToEdit.products) {
-            dealToEdit.products.forEach(product => {
-                const productInput = document.querySelector(`.product-amount-input[data-product-id="${product.id}"]`);
-                if (productInput) {
-                    productInput.value = product.amount;
-                }
-            });
-        }
-
-        if (dealToEdit.services) {
-            dealToEdit.services.forEach(service => {
-                const serviceCheckbox = document.querySelector(`.service-item input[type="checkbox"][data-service-id="${service.id}"]`);
-                if (serviceCheckbox) {
-                    serviceCheckbox.checked = true;
-                    const durationContainer = serviceCheckbox.closest('.service-item').querySelector('.d-flex');
-                    durationContainer.style.display = 'flex';
-                    const durationInput = durationContainer.querySelector('.service-duration-input');
-                    durationInput.value = service.duration || '30';
-                    durationContainer.querySelector('.duration-display').textContent = `${formatDuration(service.duration || 30)} ч`;
-                }
-            });
-        }
-
-        const dealModal = new bootstrap.Modal(dealModalElement);
-        dealModal.show();
-    }
-
-    async function saveDeal() {
-        // Удаление классов ошибок
-        ['clientName', 'clientPhone', 'clientEmail'].forEach(id => {
-            document.getElementById(id).classList.remove('is-invalid');
-        });
-        toolsList.classList.remove('is-invalid');
-        servicesList.classList.remove('is-invalid');
-
-        let isValid = true;
-
-        const clientName = document.getElementById('clientName').value.trim();
-        const clientPhone = document.getElementById('clientPhone').value.trim();
-        const clientEmail = document.getElementById('clientEmail').value.trim();
-        const dateTime = selectedDateTimeInput.value;
-
-        if (clientName === '') {
-            document.getElementById('clientName').classList.add('is-invalid');
-            isValid = false;
-        }
-
-        if (clientEmail === '' && clientPhone === '') {
-            document.getElementById('clientEmail').classList.add('is-invalid');
-            document.getElementById('clientPhone').classList.add('is-invalid');
-            isValid = false;
-        }
-
-        const products = [];
-        document.querySelectorAll('#productsList .product-item').forEach(item => {
-            const input = item.querySelector('.product-amount-input');
-            const amount = parseInt(input.value, 10);
-            if (amount > 0) {
-                products.push({
-                    id: parseInt(input.dataset.productId, 10),
-                    amount: amount
-                });
-            }
-        });
-
-        const services = [];
-        document.querySelectorAll('#servicesList .service-item').forEach(item => {
-            const checkbox = item.querySelector('input[type="checkbox"]');
-            if (checkbox.checked) {
-                const durationInput = item.querySelector('.service-duration-input');
-                const duration = parseInt(durationInput.value, 10);
-                if (isNaN(duration) || duration < 30) {
-                    durationInput.classList.add('is-invalid');
-                    isValid = false;
-                } else {
-                    durationInput.classList.remove('is-invalid');
-                }
-
-                services.push({
-                    id: parseInt(checkbox.dataset.serviceId, 10),
-                    contractor: checkbox.dataset.contractor,
-                    duration: duration // Добавляем длительность услуги
-                });
-            }
-        });
-
-        const tools = [];
-        const toolItems = document.querySelectorAll('#toolsList .tool-item');
-        toolItems.forEach(item => {
-            const amountInput = item.querySelector('.amount-input');
-            const durationInput = item.querySelector('.duration-input');
-            const availableAmount = parseInt(amountInput.dataset.availableAmount, 10);
-            const amount = parseInt(amountInput.value, 10);
-            const duration = parseInt(durationInput.value, 10);
-
-            if (amount > availableAmount) {
-                amountInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                amountInput.classList.remove('is-invalid');
-            }
-
-            if (amount > 0) {
-                tools.push({
-                    id: parseInt(amountInput.dataset.toolId, 10),
-                    amount: amount,
-                    duration: duration
-                });
-            }
-        });
-
-        if (tools.length === 0 && services.length === 0) {
-            toolsList.classList.add('is-invalid');
-            servicesList.classList.add('is-invalid');
-            isValid = false;
-        }
-
-        if (!isValid) {
-            alert('Пожалуйста, проверьте введенные данные.');
-            return;
-        }
-
-        const dealData = {
-            tools: tools,
-            products: products,
-            services: services,
-            clientName: clientName,
-            clientPhone: clientPhone,
-            clientEmail: clientEmail,
-            dateTime: dateTime
-            // duration: tools.reduce((total, tool) => total + tool.duration * tool.amount, 0) // Возможно, не нужен, так как длительность услуг обрабатывается отдельно
-        };
-
-        console.log('Отправка данных сделки:', dealData);
-
-        try {
-            const response = await fetch('/createDeal', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dealData)
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Неизвестная ошибка при сохранении сделки');
-            }
-
-            const dealModal = bootstrap.Modal.getInstance(dealModalElement);
-            if (dealModal) {
-                dealModal.hide();
-            }
-            
-            await fetchDealsAndUpdateCells();
-            updateWeekDates();
-
-        } catch (error) {
-            alert('Ошибка при сохранении сделки: ' + error.message);
-        }
-    }
-
-    function debounce(func, delay) {
-        let timeout;
-        return function (...args) {
-            const context = this;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(context, args), delay);
-        };
-    }
-
+    //================================================================================
+    // 7) Логика переключения недель/дней и отображения дат
+    //================================================================================
     function updateWeekDates() {
         const baseDate = new Date();
         baseDate.setDate(baseDate.getDate() + weekOffset * 7);
-
         const dayOfWeek = baseDate.getDay();
+        // Считаем, сколько дней до понедельника
         const daysToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
-
         const currentWeekMonday = new Date(baseDate);
         currentWeekMonday.setDate(baseDate.getDate() + daysToMonday);
 
@@ -683,7 +606,6 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 7; i++) {
             const date = new Date(displayStartDate);
             date.setDate(displayStartDate.getDate() + i);
-
             const dateNumber = date.getDate();
             const monthName = months[date.getMonth()];
             const weekdayName = weekdays[date.getDay()];
@@ -696,75 +618,449 @@ document.addEventListener('DOMContentLoaded', () => {
                 weekdayElement.textContent = weekdayName;
             }
         }
-
-        generateScheduleGrid();
     }
 
-    function toggleDurationInput(toolItem, show) {
-        const durationInput = toolItem.querySelector('.duration-input');
-        if (durationInput) {
-            if (show) {
-                durationInput.classList.add('visible');
-            } else {
-                durationInput.classList.remove('visible');
-                durationInput.value = '1';
-            }
+    function updateWeekDaysHeader() {
+        const columnDefsNew = gridApi.gridOptions.columnDefs;
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(displayStartDate);
+            date.setDate(displayStartDate.getDate() + i);
+            const dayStr = `${date.getDate()} ${months[date.getMonth()]} (${weekdays[date.getDay()]})`;
+            columnDefsNew[i + 1].headerName = dayStr;
+        }
+        gridApi.gridOptions.api.setColumnDefs(columnDefsNew);
+    }
+
+    function setupNavigationButtons() {
+        if (prevWeekButton) {
+            prevWeekButton.addEventListener('click', debounce(() => {
+                weekOffset -= 1;
+                dayOffset = 0;
+                refreshSchedule();
+            }, 100));
+        }
+        if (nextWeekButton) {
+            nextWeekButton.addEventListener('click', debounce(() => {
+                weekOffset += 1;
+                dayOffset = 0;
+                refreshSchedule();
+            }, 100));
+        }
+        if (currentWeekButton) {
+            currentWeekButton.addEventListener('click', debounce(() => {
+                weekOffset = 0;
+                dayOffset = 0;
+                refreshSchedule();
+            }, 100));
+        }
+        if (prevDayButton) {
+            prevDayButton.addEventListener('click', debounce(() => {
+                dayOffset -= 1;
+                refreshSchedule();
+            }, 100));
+        }
+        if (nextDayButton) {
+            nextDayButton.addEventListener('click', debounce(() => {
+                dayOffset += 1;
+                refreshSchedule();
+            }, 100));
         }
     }
 
-    function setupToolsListHandlers() {
-        toolsList.addEventListener('input', (event) => {
-            const target = event.target;
-            if (target.classList.contains('amount-input')) {
-                const toolItem = target.closest('.tool-item');
-                const amount = parseInt(target.value, 10);
+    function refreshSchedule() {
+        updateWeekDates();
+        fetchDeals();
+    }
+
+    //================================================================================
+    // 8) Функции создания и обновления сделок
+    //================================================================================
+    async function saveDeal() {
+        if (!dealModalElement) return;
+
+        // Сброс ошибок валидации
+        ['clientName', 'clientPhone', 'clientEmail'].forEach(id => {
+            const el = dealModalElement.querySelector(`#${id}`);
+            if (el) el.classList.remove('is-invalid');
+        });
+        if (toolsList) toolsList.classList.remove('is-invalid');
+        if (servicesList) servicesList.classList.remove('is-invalid');
+
+        let isValid = true;
+
+        const clientNameElement = dealModalElement.querySelector('#clientName');
+        const clientPhoneElement = dealModalElement.querySelector('#clientPhone');
+        const clientEmailElement = dealModalElement.querySelector('#clientEmail');
+        const dateTimeElement = dealModalElement.querySelector('#selectedDateTime');
+
+        if (!clientNameElement || !clientPhoneElement || !clientEmailElement || !dateTimeElement) {
+            alert('Внутренняя ошибка формы сделки.');
+            return;
+        }
+
+        const clientName = clientNameElement.value.trim();
+        const clientPhone = clientPhoneElement.value.trim();
+        const clientEmail = clientEmailElement.value.trim();
+        const dateTime = dateTimeElement.value;
+
+        // Валидация
+        if (clientName === '') {
+            clientNameElement.classList.add('is-invalid');
+            isValid = false;
+        }
+        if (clientEmail === '' && clientPhone === '') {
+            clientEmailElement.classList.add('is-invalid');
+            clientPhoneElement.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        // Сбор данных продуктов
+        const products = [];
+        dealModalElement.querySelectorAll('#productsList .product-item').forEach(item => {
+            const input = item.querySelector('.product-amount-input');
+            if (input) {
+                const amount = parseInt(input.value, 10);
                 if (amount > 0) {
-                    toggleDurationInput(toolItem, true);
-                } else {
-                    toggleDurationInput(toolItem, false);
+                    products.push({
+                        id: parseInt(input.dataset.productId, 10),
+                        amount: amount
+                    });
                 }
             }
         });
+
+        // Сбор данных услуг
+        const services = [];
+        dealModalElement.querySelectorAll('#servicesList .service-item').forEach(item => {
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            if (checkbox && checkbox.checked) {
+                const durationInput = item.querySelector('.edit-service-duration-input');
+                const duration = parseInt(durationInput.value, 10);
+                if (isNaN(duration) || duration < 30) {
+                    durationInput.classList.add('is-invalid');
+                    isValid = false;
+                }
+                services.push({
+                    id: parseInt(checkbox.dataset.serviceId, 10),
+                    contractor: checkbox.dataset.contractor,
+                    duration: duration
+                });
+            }
+        });
+
+        // Сбор данных инструментов
+        const tools = [];
+        dealModalElement.querySelectorAll('#toolsList .tool-item').forEach(item => {
+            const amountInput = item.querySelector('.amount-input');
+            const durationInput = item.querySelector('.duration-input');
+            if (amountInput && durationInput) {
+                const availableAmount = parseInt(amountInput.dataset.availableAmount, 10);
+                const amount = parseInt(amountInput.value, 10);
+                const duration = parseInt(durationInput.value, 10);
+
+                if (amount > availableAmount) {
+                    amountInput.classList.add('is-invalid');
+                    isValid = false;
+                }
+
+                if (amount > 0) {
+                    tools.push({
+                        id: parseInt(amountInput.dataset.toolId, 10),
+                        amount: amount,
+                        duration: duration
+                    });
+                }
+            }
+        });
+
+        if (tools.length === 0 && services.length === 0) {
+            if (toolsList) toolsList.classList.add('is-invalid');
+            if (servicesList) servicesList.classList.add('is-invalid');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            alert('Проверьте введённые данные.');
+            return;
+        }
+
+        // Данные сделки
+        const dealData = {
+            tools,
+            products,
+            services,
+            clientName,
+            clientPhone,
+            clientEmail,
+            dateTime
+        };
+
+        try {
+            const response = await fetch('/createDeal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dealData)
+            });
+            if (!response.ok) {
+                throw new Error(await response.text() || 'Неизвестная ошибка при сохранении');
+            }
+            dealModal.hide();
+            await fetchDeals();
+        } catch (error) {
+            alert('Ошибка при сохранении сделки: ' + error.message);
+        }
     }
 
-    function formatDuration(minutes) {
-        const hours = minutes / 60;
-        return hours.toFixed(1);
+    async function updateDeal() {
+        const dealId = editDealIdInput.value;
+        const clientNameVal = editClientName.value.trim();
+        const clientPhoneVal = editClientPhone.value.trim();
+        const clientEmailVal = editClientEmail.value.trim();
+        const dateTimeVal = editDateTimeInput ? editDateTimeInput.value : '';
+
+        const tools = Array.from(document.querySelectorAll('#editToolsList .edit-amount-input'))
+            .map(input => {
+                const amount = parseInt(input.value, 10);
+                if (amount > 0) {
+                    const durationInput = input.closest('.tool-item').querySelector('.edit-duration-input');
+                    const duration = parseInt(durationInput.value, 10);
+                    return {
+                        id: parseInt(input.dataset.toolId, 10),
+                        amount,
+                        duration
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+
+        const products = Array.from(document.querySelectorAll('#editProductsList .edit-product-amount-input'))
+            .map(input => {
+                const amount = parseInt(input.value, 10);
+                if (amount > 0) {
+                    return {
+                        id: parseInt(input.dataset.productId, 10),
+                        amount
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+
+        const services = Array.from(document.querySelectorAll('#editServicesList .service-item'))
+            .map(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    const durationInput = item.querySelector('.edit-service-duration-input');
+                    const duration = parseInt(durationInput.value, 10);
+                    return {
+                        id: parseInt(checkbox.dataset.serviceId, 10),
+                        contractor: checkbox.dataset.contractor,
+                        duration
+                    };
+                }
+                return null;
+            }).filter(Boolean);
+
+        let isValid = true;
+
+        // Валидация
+        if (clientNameVal === '') {
+            editClientName.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            editClientName.classList.remove('is-invalid');
+        }
+
+        if (clientEmailVal === '' && clientPhoneVal === '') {
+            editClientEmail.classList.add('is-invalid');
+            editClientPhone.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            editClientEmail.classList.remove('is-invalid');
+            editClientPhone.classList.remove('is-invalid');
+        }
+
+        if (tools.length === 0 && services.length === 0) {
+            alert('Выберите хотя бы один инструмент или услугу.');
+            isValid = false;
+        }
+
+        services.forEach(s => {
+            if (!s.duration || s.duration < 30) isValid = false;
+        });
+        tools.forEach(t => {
+            if (!t.duration || t.duration < 30) isValid = false;
+        });
+
+        if (!isValid) {
+            alert('Проверьте введённые данные.');
+            return;
+        }
+
+        const updatedDealData = {
+            id: dealId,
+            clientName: clientNameVal,
+            clientPhone: clientPhoneVal,
+            clientEmail: clientEmailVal,
+            tools,
+            products,
+            services,
+            dateTime: dateTimeVal
+        };
+
+        try {
+            const response = await fetch('/api/update-deal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedDealData)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            console.log('Сделка успешно обновлена.');
+            editDealModal.hide();
+            await fetchDeals();
+        } catch (error) {
+            console.error('Ошибка обновления сделки:', error);
+            alert('Ошибка при обновлении сделки: ' + error.message);
+        }
     }
 
-    document.getElementById('prevWeek').addEventListener('click', debounce(function () {
-        weekOffset -= 1;
-        dayOffset = 0;
-        updateWeekDates();
-    }, 100));
+    //================================================================================
+    // 9) Открытие модальных окон
+    //================================================================================
+    function openDealModal(cellDate) {
+        selectedDateTimeInput.value = cellDate.toISOString();
+        dealModal.show();
+    }
 
-    document.getElementById('nextWeek').addEventListener('click', debounce(function () {
-        weekOffset += 1;
-        dayOffset = 0;
-        updateWeekDates();
-    }, 100));
+    function openEditDealModal(dealId) {
+        fetch(`/api/get-deal/${dealId}`)
+            .then(resp => {
+                if (!resp.ok) throw new Error(`Ошибка загрузки сделки: ${resp.status}`);
+                return resp.json();
+            })
+            .then(dealData => {
+                populateEditModal(dealData);
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Не удалось загрузить данные сделки');
+            });
+    }
 
-    document.getElementById('currentWeek').addEventListener('click', debounce(function () {
-        weekOffset = 0;
-        dayOffset = 0;
-        updateWeekDates();
-    }, 100));
+    function populateEditModal(dealData) {
+        if (!dealData) {
+            alert('Пустые данные сделки для редактирования');
+            return;
+        }
 
-    document.getElementById('prevDay').addEventListener('click', debounce(function () {
-        dayOffset -= 1;
-        updateWeekDates();
-    }, 100));
+        editClientName.value = dealData.clientName || '';
+        editClientPhone.value = dealData.clientPhone || '';
+        editClientEmail.value = dealData.clientEmail || '';
+        editDealIdInput.value = dealData.id || '';
 
-    document.getElementById('nextDay').addEventListener('click', debounce(function () {
-        dayOffset += 1;
-        updateWeekDates();
-    }, 100));
+        if (editDateTimeInput) {
+            const scheduledDateTime = new Date(dealData.scheduled_date);
+            const offset = scheduledDateTime.getTimezoneOffset();
+            const localDateTime = new Date(scheduledDateTime.getTime() - offset * 60000);
+            editDateTimeInput.value = localDateTime.toISOString().slice(0, 16);
+        }
 
-    saveDealButton.addEventListener('click', saveDeal);
+        // Сбрасываем значения
+        document.querySelectorAll('#editToolsList .edit-amount-input').forEach(input => {
+            input.value = '0';
+            const durInput = input.closest('.tool-item').querySelector('.edit-duration-input');
+            durInput.value = '30';
+            const durDisp = input.closest('.tool-item').querySelector('.duration-display');
+            if (durDisp) durDisp.textContent = '0.5 ч';
+        });
 
-    setupToolsListHandlers();
-    loadInitialData();
-    generateTimeSlots();
-    setupCellClickHandler();
-    updateWeekDates();
+        document.querySelectorAll('#editProductsList .edit-product-amount-input').forEach(input => {
+            input.value = '0';
+        });
+
+        document.querySelectorAll('#editServicesList .service-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+            const durCont = checkbox.closest('.service-item').querySelector('.d-flex');
+            durCont.style.display = 'none';
+            const durInput = durCont.querySelector('.edit-service-duration-input');
+            durInput.value = '30';
+            durCont.querySelector('.duration-display').textContent = '0.5 ч';
+        });
+
+        // Заполняем текущие данные сделки
+        if (dealData.tools) {
+            dealData.tools.forEach(tool => {
+                const amountInput = document.querySelector(
+                    `#editToolsList .edit-amount-input[data-tool-id="${tool.id}"]`
+                );
+                if (amountInput) {
+                    amountInput.value = tool.amount;
+                    const durInput = amountInput.closest('.tool-item').querySelector('.edit-duration-input');
+                    durInput.value = tool.duration || '30';
+                    const durDisp = amountInput.closest('.tool-item').querySelector('.duration-display');
+                    durDisp.textContent = (tool.duration ? (tool.duration / 60).toFixed(1) : '0.5') + ' ч';
+                }
+            });
+        }
+
+        if (dealData.products) {
+            dealData.products.forEach(product => {
+                const productInput = document.querySelector(
+                    `#editProductsList .edit-product-amount-input[data-product-id="${product.id}"]`
+                );
+                if (productInput) {
+                    productInput.value = product.amount;
+                }
+            });
+        }
+
+        if (dealData.services) {
+            dealData.services.forEach(service => {
+                const serviceCheckbox = document.querySelector(
+                    `#editServicesList .service-item input[type="checkbox"][data-service-id="${service.id}"]`
+                );
+                if (serviceCheckbox) {
+                    serviceCheckbox.checked = true;
+                    const durCont = serviceCheckbox.closest('.service-item').querySelector('.d-flex');
+                    durCont.style.display = 'flex';
+                    const durInput = durCont.querySelector('.edit-service-duration-input');
+                    durInput.value = service.duration || '30';
+                    durCont.querySelector('.duration-display').textContent = (service.duration ? (service.duration / 60).toFixed(1) : '0.5') + ' ч';
+                }
+            });
+        }
+
+        editDealModal.show();
+    }
+
+    //================================================================================
+    // 10) Вспомогательная функция debounce
+    //================================================================================
+    function debounce(func, delay) {
+        let timeout;
+        return function (...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    //================================================================================
+    // Инициализация при загрузке
+    //================================================================================
+    loadInitialData();     // Загрузить инструменты/продукты/услуги
+    initAGGrid();          // Инициализировать Grid
+    setupNavigationButtons();
+    updateWeekDates();     // Расчитать неделю
+    fetchDeals();          // Загрузить сделки и отобразить
+
+    // Сохранение сделки
+    if (saveDealButton) {
+        saveDealButton.addEventListener('click', saveDeal);
+    }
+
+    // Обновление сделки
+    if (updateDealButton) {
+        updateDealButton.addEventListener('click', updateDeal);
+    }
 });

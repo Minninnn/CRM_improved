@@ -427,6 +427,87 @@ void get_deals_handler(const shared_ptr<Session> session) {
     session->close(restbed::UNAUTHORIZED, error_message, { {"Content-Length", to_string(error_message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
 }
 
+void get_deal_by_id_handler(const shared_ptr<Session>& session) {
+    string session_id = extract_session_id(session);
+    if (!session_id.empty()) {
+        string email;
+        if (is_session_valid(session_id, email)) {
+            const auto request = session->get_request();
+            // Извлекаем ID из пути запроса
+            string path = request->get_path();
+            // Предполагаем, что путь выглядит как /api/get-deal/{id}
+            size_t pos = path.find_last_of('/');
+            if (pos == string::npos || pos == path.length() - 1) {
+                string message = "Неверный формат URL";
+                session->close(restbed::BAD_REQUEST, message, { {"Content-Length", to_string(message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+                return;
+            }
+            string deal_id_str = path.substr(pos + 1);
+            int deal_id;
+            try {
+                deal_id = stoi(deal_id_str);
+            }
+            catch (const invalid_argument&) {
+                string message = "ID сделки должно быть числом";
+                session->close(restbed::BAD_REQUEST, message, { {"Content-Length", to_string(message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+                return;
+            }
+            catch (const out_of_range&) {
+                string message = "ID сделки вне допустимого диапазона";
+                session->close(restbed::BAD_REQUEST, message, { {"Content-Length", to_string(message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+                return;
+            }
+
+            try {
+                // Проверка кэша
+                string cache_key = "deal_" + to_string(deal_id);
+                json deal = cache.get(cache_key, [&]() {
+                    auto conn = connection_pool.acquire();
+                    pqxx::work txn(*conn);
+                    // Запрос данных сделки по ID
+                    string query = "SELECT d.id, d.scheduled_date, c.name AS clientName, d.duration, d.duration_service, d.client_id "
+                        "FROM deals d "
+                        "JOIN clients_info c ON d.client_id = c.id "
+                        "WHERE d.id = $1";
+                    pqxx::result r = txn.exec_params(query, deal_id);
+                    txn.commit();
+                    connection_pool.release(conn);
+
+                    if (r.empty()) {
+                        throw std::runtime_error("Сделка с ID " + to_string(deal_id) + " не найдена");
+                    }
+
+                    json deal_data;
+                    const auto& row = r[0];
+                    deal_data["id"] = row["id"].as<int>();
+                    deal_data["scheduled_date"] = row["scheduled_date"].c_str();
+                    deal_data["clientName"] = row["clientName"].c_str();
+                    deal_data["duration"] = row["duration"].is_null() ? 0 : row["duration"].as<int>() / 60.0;
+                    deal_data["duration_service"] = row["duration_service"].is_null() ? 0 : row["duration_service"].as<int>() / 60.0;
+                    deal_data["client_id"] = row["client_id"].as<int>();
+
+                    // Здесь можно добавить дополнительные данные, связанные со сделкой (инструменты, продукты, услуги и т.д.)
+
+                    return deal_data;
+                    });
+
+                string response_body = deal.dump();
+                session->close(restbed::OK, response_body, { {"Content-Type", "application/json"}, {"Content-Length", to_string(response_body.size())} });
+                return;
+            }
+            catch (const std::exception& e) {
+                string error_message = string("Ошибка при получении сделки: ") + e.what();
+                session->close(restbed::NOT_FOUND, error_message, { {"Content-Length", to_string(error_message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+                return;
+            }
+        }
+    }
+
+    // Если сессия не валидна
+    string error_message = "Unauthorized";
+    session->close(restbed::UNAUTHORIZED, error_message, { {"Content-Length", to_string(error_message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+}
+
 // Обработчик регистрации
 void post_method_registration(const shared_ptr<Session> session) {
     const auto request = session->get_request();
@@ -739,6 +820,202 @@ void post_create_deal_handler(const shared_ptr<Session> session) {
     }
 }
 
+// Обработчик обновления сделки
+void post_update_deal_handler(const shared_ptr<Session> session) {
+    int content_length = session->get_request()->get_header("Content-Length", 0);
+    string session_id = extract_session_id(session);
+    if (!session_id.empty()) {
+        string email;
+        if (is_session_valid(session_id, email)) {
+            session->fetch(content_length, [email](const shared_ptr<Session> session, const restbed::Bytes& body) {
+                try {
+                    auto request_body = string(reinterpret_cast<const char*>(body.data()), body.size());
+                    auto data = json::parse(request_body);
+                    
+
+                    if (!data.contains("clientName") || (!data.contains("clientPhone") && !data.contains("clientEmail"))) {
+                        throw std::runtime_error("Необходимые данные о клиенте отсутствуют");
+                    }
+
+                    int deal_id = std::stoi(data["id"].get<std::string>());
+                    
+                    string clientName = data["clientName"];
+                    string clientPhone = data.value("clientPhone", "");
+                    string clientEmail = data.value("clientEmail", "");
+
+                    if (clientName.empty() || (clientPhone.empty() && clientEmail.empty())) {
+                        throw std::runtime_error("Необходимо указать контактные данные клиента");
+                    }
+                    
+                    vector<json> tools = data.value("tools", vector<json>());
+                    vector<json> products = data.value("products", vector<json>());
+                    vector<json> services = data.value("services", vector<json>());
+                    
+
+                    // Эти поля будут суммироваться:
+                    // duration – суммарная длительность по инструментам
+                    // duration_service – суммарная длительность по услугам
+                    int total_duration = 0;
+                    int total_duration_service = 0;
+                    double total_cost = 0.0;
+                    
+                    auto conn = connection_pool.acquire();
+                    pqxx::work txn(*conn);
+
+                    string dateTime;
+                    if (data.contains("dateTime")) {
+                        dateTime = data["dateTime"];
+                    }
+                    else {
+                        // Если 'dateTime' не предоставлено, получаем текущее значение из базы данных
+                        pqxx::result deal_res = txn.exec_params("SELECT scheduled_date FROM deals WHERE id = $1", deal_id);
+                        if (!deal_res.empty()) {
+                            dateTime = deal_res[0]["scheduled_date"].c_str();
+                        }
+                        else {
+                            throw std::runtime_error("Не удалось получить дату и время существующей сделки");
+                        }
+                    }
+                    
+                    // Проверка существования сделки
+                    pqxx::result existing_deal = txn.exec_params("SELECT client_id, resource_id FROM deals WHERE id = $1", deal_id);
+                    if (existing_deal.empty()) {
+                        throw std::runtime_error("Сделка с указанным ID не найдена");
+                    }
+                    int client_id = existing_deal[0]["client_id"].as<int>();
+                    int resource_id = existing_deal[0]["resource_id"].as<int>();
+                    
+                    // Обновление информации о клиенте, если необходимо
+                    if (!clientEmail.empty()) {
+                        // Проверка существования клиента
+                        pqxx::result client_res = txn.exec_params("SELECT id FROM clients_info WHERE email = $1", clientEmail);
+                        if (!client_res.empty()) {
+                            client_id = client_res[0]["id"].as<int>();
+                        }
+                        else {
+                            // Создание нового клиента
+                            pqxx::result new_client_res = txn.exec_params(
+                                "INSERT INTO clients_info (name, phone_number, email) VALUES ($1, $2, $3) RETURNING id",
+                                clientName, clientPhone, clientEmail
+                            );
+                            client_id = new_client_res[0]["id"].as<int>();
+                        }
+                    }
+                 
+                    for (const auto& tool : tools) {
+                        int tool_id = tool["id"];
+                        int amount = tool["amount"];
+                        int tool_duration = tool["duration"];
+
+                        pqxx::result tool_res = txn.exec_params("SELECT amount, price FROM tools WHERE id = $1", tool_id);
+                        if (tool_res.empty()) {
+                            throw std::runtime_error("Инструмент с ID " + std::to_string(tool_id) + " не существует");
+                        }
+
+                        int available = tool_res[0]["amount"].as<int>();
+                        double price = tool_res[0]["price"].as<double>();
+
+                        if (available < amount) {
+                            throw std::runtime_error("Недостаточное количество инструмента с ID " + std::to_string(tool_id));
+                        }
+
+                        txn.exec_params("UPDATE tools SET amount = amount - $1 WHERE id = $2", amount, tool_id);
+
+                        // Стоимость инструмента зависит от количества и длительности (приводим длительность к часам, если нужно)
+                        double cost_for_tools = price * amount * (static_cast<double>(tool_duration) / 60.0);
+                        total_cost += cost_for_tools;
+
+                        // Суммируем длительность инструментов в общий duration
+                        total_duration += tool_duration;
+                    }
+
+                    // Обработка продуктов
+                    for (const auto& product : products) {
+                        int product_id = product["id"];
+                        int amount = product["amount"];
+
+                        pqxx::result product_res = txn.exec_params("SELECT amount, price FROM products WHERE id = $1", product_id);
+                        if (product_res.empty()) {
+                            throw std::runtime_error("Продукт с ID " + std::to_string(product_id) + " не существует");
+                        }
+
+                        int available = product_res[0]["amount"].as<int>();
+                        double price = product_res[0]["price"].as<double>();
+
+                        if (available < amount) {
+                            throw std::runtime_error("Недостаточное количество продукта с ID " + std::to_string(product_id));
+                        }
+
+                        txn.exec_params("UPDATE products SET amount = amount - $1 WHERE id = $2", amount, product_id);
+                        total_cost += price * amount;
+                    }
+
+                    // Обработка услуг
+                    for (const auto& service : services) {
+                        int service_id = service["id"];
+                        // Получение длительности услуги из данных запроса или установка значения по умолчанию
+                        int requested_service_duration = service.value("duration", 0);
+
+                        // Исправленный запрос: выбираем только price
+                        pqxx::result service_res = txn.exec_params("SELECT price FROM contractors_services WHERE id = $1", service_id);
+                        if (service_res.empty()) {
+                            throw std::runtime_error("Услуга с ID " + std::to_string(service_id) + " не существует");
+                        }
+
+                        double price = service_res[0]["price"].as<double>();
+                        // Так как duration отсутствует в contractors_services, используем только запрошенную длительность
+                        int final_service_duration = (requested_service_duration > 0) ? requested_service_duration : 0; // Или установите другое значение по умолчанию
+
+                        // Расчет стоимости услуги по длительности
+                        double cost_for_services = price * (static_cast<double>(final_service_duration) / 60.0);
+                        total_cost += cost_for_services;
+
+                        // Суммируем длительности услуг в duration_service
+                        total_duration_service += final_service_duration;
+                    }
+
+                    // Вставка ресурса
+                    std::stringstream ss;
+                    ss << "Resource_" << std::chrono::system_clock::now().time_since_epoch().count();
+                    std::string resource_name = ss.str();
+
+                    txn.exec_params("INSERT INTO resources (name, price) VALUES ($1, $2) RETURNING id", resource_name, total_cost);
+                    std::cout << "1  ";
+
+                    // Вставка сделки с учетом duration и duration_service
+                    txn.exec_params(
+                        "INSERT INTO deals (client_id, resource_id, create_date, scheduled_date, duration, duration_service) "
+                        "VALUES ($1, $2, NOW(), $3, $4, $5)",
+                        client_id, resource_id, dateTime, total_duration, total_duration_service
+                    );
+                    std::cout << "1  ";
+                    txn.commit();
+
+                    connection_pool.release(conn);
+                    
+                    // Инвалидация кэша
+                    cache.invalidate_by_prefix("deals_");
+                    cache.invalidate("tools");
+                    cache.invalidate("products");
+                    cache.invalidate("services");
+
+                    string success_message = "Сделка успешно обновлена";
+                    session->close(restbed::OK, success_message, { {"Content-Length", to_string(success_message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+                }
+                catch (const std::exception& e) {
+                    string errorMessage = "Ошибка при обработке сделки: ";
+                    errorMessage += e.what();
+                    session->close(restbed::INTERNAL_SERVER_ERROR, errorMessage, { {"Content-Length", to_string(errorMessage.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+                }
+                });
+            return;
+        }
+        // Отсутствие session_id
+        string error_message = "Session ID не предоставлен или невалиден";
+        session->close(restbed::UNAUTHORIZED, error_message, { {"Content-Length", to_string(error_message.size())}, {"Content-Type", "text/plain; charset=utf-8"} });
+    }
+}
+
 // Обработчик выхода из системы
 void post_method_logout(const shared_ptr<Session> session) {
     string session_id = extract_session_id(session);
@@ -813,9 +1090,17 @@ int main() {
     deals_resource->set_path("/api/deals");
     deals_resource->set_method_handler("GET", get_deals_handler);
 
+    auto get_deal_by_id_resource = make_shared<Resource>();
+    get_deal_by_id_resource->set_path("/api/get-deal/{name: .*}");
+    get_deal_by_id_resource->set_method_handler("GET", get_deal_by_id_handler);
+
     auto create_deal_resource = make_shared<Resource>();
     create_deal_resource->set_path("/createDeal");
     create_deal_resource->set_method_handler("POST", post_create_deal_handler);
+
+    auto update_deal_resource = make_shared<Resource>();
+    update_deal_resource->set_path("/api/update-deal");
+    update_deal_resource->set_method_handler("POST", post_update_deal_handler);
 
     auto script_resource = make_shared<Resource>();
     script_resource->set_path("/script.js");
@@ -845,7 +1130,9 @@ int main() {
     service.publish(products_resource);
     service.publish(services_resource);
     service.publish(deals_resource);
+    service.publish(get_deal_by_id_resource);
     service.publish(create_deal_resource);
+    service.publish(update_deal_resource);
     service.publish(logout_resource);
     service.publish(css_resource);
     service.publish(script_resource);

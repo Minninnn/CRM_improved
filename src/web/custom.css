@@ -1,27 +1,49 @@
+:root {
+    /* Color Palette */
+    --primary-color: #007bff;
+    --primary-color-light: rgba(0, 123, 255, 0.7);
+    --secondary-color: #6c757d;
+    --text-color: #343a40;
+    --background-color: #f8f9fa;
+    --navbar-background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
+    --sidebar-background: linear-gradient(180deg, #e9ecef 0%, #f8f9fa 100%);
+    --hover-color: #0056b3;
+    --border-color: #dee2e6;
+    --error-color: #dc3545;
+    --success-color: #28a745;
+    /* Spacing */
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+    /* Fonts */
+    --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-size-base: 16px;
+    /* Animations */
+    --transition-fast: 0.2s ease-in-out;
+    --transition-normal: 0.3s ease-in-out;
+    /* Shadows and Borders */
+    --box-shadow-light: 0 2px 5px rgba(0,0,0,0.1);
+    --box-shadow-medium: 0 4px 10px rgba(0,0,0,0.15);
+    --border-radius: 0.5rem;
+}
+
 /* ===================================================
-   Основные стили
+   Global Styles
 =================================================== */
 
-.deal-item {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background-color: rgba(0, 123, 255, 0.5);
-    color: #fff;
-    text-align: center;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
+
 
 body {
-    font-family: var(--bs-body-font-family);
+    font-family: var(--font-base);
+    font-size: var(--font-size-base);
+    color: var(--text-color);
+    background-color: var(--background-color);
+    transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
-/* Стили для невалидных полей форм */
+/* Invalid Form Fields */
 .is-invalid {
-    border-color: #dc3545 !important;
+    border-color: var(--error-color) !important;
 }
 
     .is-invalid:focus {
@@ -29,269 +51,266 @@ body {
     }
 
 /* ===================================================
-   Навигационные панели
+   Navbar Styles
 =================================================== */
 
-/* Верхняя навигационная панель */
+/* Top Navbar */
 #navbar-top {
-    background-color: #000000;
+    background: var(--navbar-background);
     color: #fff;
+    box-shadow: var(--box-shadow-medium);
+    animation: fadeInUp var(--transition-normal) forwards;
 }
 
-/* Нижняя навигационная панель (для мобильных устройств) */
+    #navbar-top .nav-link {
+        color: #fff;
+        transition: color var(--transition-fast);
+    }
+
+        #navbar-top .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+/* Bottom Navbar for Mobile */
 #nav-bottom {
-    background-color: #555;
+    background-color: var(--secondary-color);
     color: #fff;
     height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--box-shadow-light);
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    backdrop-filter: blur(8px);
 }
 
 .nav-item-bottom {
     color: #fff;
 }
 
-/* Левая боковая панель */
+/* Sidebar Styles */
 #sidebar-left {
-    background-color: #fafafa;
-    color: #333;
+    background: var(--sidebar-background);
+    color: var(--text-color);
     width: 4rem;
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
-    padding: 48px 0 0;
+    padding: 4.5rem 0 0;
     z-index: 1000;
     font-size: 2rem;
+    box-shadow: var(--box-shadow-medium);
+    transition: width var(--transition-normal);
 }
 
     #sidebar-left a.nav-link {
-        color: #333;
+        color: var(--text-color);
         text-decoration: none;
         display: block;
-        margin-bottom: 1rem;
-        transition: color 0.28s ease;
+        margin-bottom: var(--spacing-md);
+        transition: color var(--transition-fast), transform var(--transition-fast);
     }
 
         #sidebar-left a.nav-link:hover {
-            color: #0021dbed;
+            color: var(--hover-color);
+            transform: scale(1.1);
         }
 
-/* Правая боковая панель */
-#offsidebar-left {
-    /* Дополнительные стили при необходимости */
-}
-
 /* ===================================================
-   Основной контент и расписание
+   Schedule Grid Styles
 =================================================== */
 
-/* Основной контейнер расписания */
-#schedule-container {
-    display: flex;
-    justify-content: space-between;
-    width: 100%; /* Добавлено для растягивания сетки */
-    height: 100vh; /* Например, можно задать высоту */
+/* AG Grid Container */
+.ag-theme-alpine {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-light);
 }
 
-/* Контейнеры времени слева и справа */
-#time-container-left,
-#time-container-right {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 50px; /* Задайте фиксированную ширину или используйте flex */
-}
-
-/* Ячейки времени */
-.time-cell {
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.time-cell, .schedule-cell {
-    height: 30px;
-}
-
-/* Генерация сделок в ячейке */
-.deals-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: 2px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Отдельная сделка */
-.deal-item {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background-color: rgba(0, 123, 255, 0.5);
-    color: #fff;
-    text-align: center;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    cursor: pointer;
-}
-
-    .deal-item:hover {
-        background-color: #0056b3;
-    }
-
-/* Опции редактирования и добавления сделок */
-.deal-options {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: none;
-    flex-direction: column;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 4px;
-    z-index: 10;
-}
-
-.schedule-cell.has-deal:hover .deal-options {
-    display: flex;
-}
-
-.deal-options button {
-    background-color: #fff;
-    border: 1px solid #007bff;
-    color: #007bff;
-    padding: 2px 6px;
-    margin: 2px 0;
-    border-radius: 3px;
-    font-size: 0.6rem;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-    .deal-options button:hover {
-        background-color: #007bff;
-        color: #fff;
-    }
-
-/* Разделение ячейки при наличии нескольких сделок */
-.schedule-cell.split {
-    background: linear-gradient(to right, #550adaeb 50%, #0b1b32 50%);
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
-}
-
-    .schedule-cell.split .deals-container {
-        flex-direction: row;
-        justify-content: space-around;
-        align-items: center;
-    }
-
-    .schedule-cell.split .deal-item {
-        width: 45%;
-        margin: 0;
-    }
-
-/* Табличная часть расписания */
-#table-container {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7 дней недели */
-    grid-auto-rows: 30px; /* высота строки */
-    width: 100%;
-    overflow: auto;
-}
-
-.schedule-row {
-    display: contents; /* Позволяет использовать родительский grid */
-}
-
+/* Schedule Cells */
 .schedule-cell {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     position: relative;
+    transition: background-color var(--transition-fast);
+    padding: 0.25rem;
 }
 
     .schedule-cell:hover {
-        background-color: #f0f0f0;
-    }
-
-    .schedule-cell.deal-created {
-        background-color: #550adaeb;
-    }
-
-/* Создание сделок */
-#create-deal-btn {
-    font-size: 1.5rem;
-    color: #007bff;
-    text-decoration: none;
-}
-
-    #create-deal-btn:hover {
-        color: #0056b3;
-        text-decoration: none;
-    }
-
-/* ===================================================
-   Кнопки и анимации
-=================================================== */
-
-/* Кнопка открытия панели настроек таблицы */
-.buttonOpenCollapseSettingsTabl {
-    border: 1px solid #ddd;
-    border-top: 0;
-    padding: 0 1rem;
-    border-radius: 0 0 1rem 1rem;
-    font-size: 0.7rem;
-}
-
-    .buttonOpenCollapseSettingsTabl a {
-        color: #888;
-        height: 1rem;
-        display: block;
-        vertical-align: middle;
-    }
-
-/* Пробелы и стрелки */
-.spaceCollapseSettingsTabl,
-.arrowLeftCollapseSettingsTabl,
-.arrowRightCollapseSettingsTabl {
-    border-top: 1px solid #ddd;
-    color: #000;
-    font-size: 0.7rem;
-}
-
-.arrowLeftCollapseSettingsTabl,
-.arrowRightCollapseSettingsTabl {
-    border-bottom: 1px solid #eee;
-}
-
-.arrow-and-time {
-    width: 2rem;
-    height: 2rem;
-}
-
-/* Кнопки перемотки */
-.rewind-button {
-    transition: transform 0.2s;
-}
-
-    .rewind-button:hover {
-        transform: scale(1.1);
+        background-color: rgba(0, 123, 255, 0.1);
         cursor: pointer;
     }
 
-/* Анимация кнопок при нажатии */
-button:active,
-.button-clicked {
-    animation: button-press-animation 0.2s;
+/* Deal Badges */
+.badge-deal {
+    display: block;
+    background-color: var(--primary-color-light);
+    color: #fff;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+    .badge-deal:hover {
+        background-color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+
+/* Add Button */
+.btn-add-deal {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.25rem;
+    font-size: 0.75rem;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+    .btn-add-deal:hover {
+        background-color: var(--success-color);
+        color: #fff;
+        transform: scale(1.05);
+    }
+
+/* Modal Styles */
+.modal-dialog {
+    margin: 1.75rem auto;
+    transform: translateY(20px);
+    opacity: 0;
+    animation: fadeInUp var(--transition-normal) forwards;
+}
+
+.modal-content {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow-medium);
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: none;
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.modal-body {
+    background-color: #f9f9f9;
+}
+
+.modal-footer {
+    border-top: none;
+}
+
+/* Form Elements */
+.form-floating > .form-control {
+    height: calc(3.5rem + 2px);
+    border-radius: var(--border-radius);
+}
+
+/* Buttons */
+.btn-primary, .btn-warning, .btn-secondary {
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .btn-warning:hover {
+        background-color: #ffc107;
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--primary-color-light);
+        transform: scale(1.01);
+    }
+
+    /* Collapsible Buttons */
+    .btn-secondary[data-bs-toggle="collapse"] {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: var(--box-shadow-light);
+    }
+
+        .btn-secondary[data-bs-toggle="collapse"]:hover {
+            background-color: var(--primary-color-light);
+            transform: scale(1.01);
+        }
+
+    .btn-secondary .bi-chevron-down {
+        transition: transform var(--transition-normal);
+    }
+
+    .btn-secondary[aria-expanded="true"] .bi-chevron-down {
+        transform: rotate(180deg);
+    }
+
+/* Service Duration Inputs */
+.duration-display {
+    margin-left: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-color);
+}
+
+.d-flex.align-items-center .duration-input {
+    max-width: 80px;
+}
+
+/* Responsive Styles */
+@media (max-width: 767.98px) {
+    #main {
+        padding: 1rem;
+    }
+
+    .badge-deal {
+        font-size: 0.75rem;
+    }
+
+    .btn-add-deal {
+        font-size: 0.65rem;
+    }
+
+    .modal-header {
+        padding: 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 0.75rem;
+    }
+}
+
+@media (min-width: 768px) {
+    #main {
+        padding: 3rem 1rem 1rem 4.5rem;
+    }
+}
+
+/* ===================================================
+   Animations
+=================================================== */
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes button-press-animation {
@@ -309,211 +328,52 @@ button:active,
 }
 
 /* ===================================================
-   Мобильные стили
+   Additional Styles
 =================================================== */
 
-@media (max-width: 767.98px) {
-    #main {
-        padding: 1rem 1rem 4rem 1rem;
-    }
-
-    .deal-item {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        z-index: 5;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .deal-options {
-        flex-direction: row;
-    }
-
-        .deal-options button {
-            padding: 1px 3px;
-            margin: 0 1px;
-            font-size: 0.5rem;
-        }
-}
-
-/* Стили для устройств Medium и выше (планшеты и десктопы) */
-@media (min-width: 768px) {
-    #main {
-        padding: 3rem 1rem 1rem 4.5rem;
-    }
-}
-
-/* ===================================================
-   Дополнительные стили
-=================================================== */
-
-/* Настройки таблицы */
-#SettingsTabl {
-    padding: 1rem 0;
-}
-
-#radioSettingsTabl {
-    margin: auto 1rem;
-    padding: 1rem;
-}
-
-/* Отображение навигационного меню */
-.nav-dropup-menu {
-    text-align: center;
-}
-
-    .nav-dropup-menu .nav-link,
-    .nav-dropup-menu.btn {
-        color: #000;
-        padding: 1.5rem 0;
-    }
-
-    .nav-dropup-menu .hr {
-        color: #555;
-    }
-
-/* Настройки Offcanvas */
-.offcanvas.offcanvas-bottom {
-    height: auto;
-    max-height: 90vh;
-}
-
-/* ===================================================
-   Модальное окно и расписание
-=================================================== */
-
-.modal-dialog {
-    margin: 1.75rem auto;
-}
-
-.modal-content {
-    /* Добавлена анимация появления */
-    animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-/* Заголовок модального окна */
-.modal-header {
-    border-bottom: none;
-}
-
-/* Тело модального окна */
-.modal-body {
-    background-color: #f9f9f9;
-}
-
-/* Футер модального окна */
-.modal-footer {
-    border-top: none;
-}
-
-/* Поля формы с плавающими метками */
-.form-floating > .form-control {
-    height: calc(3.5rem + 2px);
-}
-
-/* Стили для кнопки сохранения */
-#saveDealButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Дополнительные стили для улучшения внешнего вида инструментов, продуктов и услуг */
-#toolsList .tool-item,
-#productsList .product-item {
-    display: flex;
-    flex-direction: column;
-    padding: 0.5rem;
+/* Settings Button */
+.buttonOpenCollapseSettingsTabl {
+    border: 1px solid #ddd;
+    border-top: 0;
+    padding: 0 1rem;
+    border-radius: 0 0 1rem 1rem;
+    font-size: 0.7rem;
     background-color: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 0.5rem;
+    box-shadow: var(--box-shadow-light);
 }
 
-    #toolsList .tool-item:hover,
-    #productsList .product-item:hover {
-        background-color: #f1f1f1;
+    .buttonOpenCollapseSettingsTabl a {
+        color: #888;
+        height: 1rem;
+        display: block;
+        vertical-align: middle;
+        transition: color var(--transition-fast);
     }
 
-#servicesList .service-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 0.5rem;
+        .buttonOpenCollapseSettingsTabl a:hover {
+            color: var(--primary-color);
+        }
+
+/* Split Cells for Multiple Deals */
+.schedule-cell.split {
+    background: linear-gradient(to right, var(--primary-color-light) 50%, var(--secondary-color) 50%);
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    border-radius: var(--border-radius);
 }
 
-    #servicesList .service-item label {
-        margin-left: 0.5rem;
-        cursor: pointer;
+    .schedule-cell.split .badge-deal {
+        width: 45%;
+        margin: 0;
     }
 
-/* Стили для инпутов с ошибками в списках */
-#toolsList.is-invalid,
-#servicesList.is-invalid,
-#productsList.is-invalid {
-    border: 1px solid #dc3545;
-    padding: 10px;
-    border-radius: 0.5rem;
-    background-color: #ffe6e6;
-}
-
-/* Стили для сворачиваемых кнопок */
-.btn-secondary[data-bs-toggle="collapse"] {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.btn-secondary .bi-chevron-down {
-    transition: transform 0.3s;
-}
-
-.btn-secondary[aria-expanded="true"] .bi-chevron-down {
-    transform: rotate(180deg);
-}
-
-/* Стили для полей ввода продолжительности */
-.duration-input {
-    display: none;
-}
-
-.tool-item .duration-input.visible {
-    display: block;
-}
-
-/* Стили для улучшенного отображения инструментов */
-#toolsList .tool-item .form-control {
-    margin-bottom: 0.5rem;
-}
-
-/* ===================================================
-   Плавные переходы расписания
-=================================================== */
-
-/* Контейнер расписания с переходом прозрачности */
-#table-container {
-    opacity: 1;
-    transition: opacity 0.5s ease-in-out;
-}
-
-/* Классы для анимации появления и исчезновения */
+/* Smooth Transitions */
 .fade-out {
     opacity: 0;
+    transition: opacity var(--transition-normal);
 }
 
 .fade-in {
     opacity: 1;
+    transition: opacity var(--transition-normal);
 }
